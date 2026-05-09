@@ -1,17 +1,19 @@
 """
-Face Detection Module - Using MediaPipe
+Face Detection Module - Using MediaPipe (v0.10+)
 Handles face detection from webcam frames and returns bounding boxes.
 """
 
 import cv2
 import mediapipe as mp
+from mediapipe.tasks.python import vision
 import numpy as np
 from typing import List, Tuple, Optional
+import os
 
 
 class FaceDetector:
     """
-    Face detection using MediaPipe.
+    Face detection using MediaPipe Tasks API.
     MediaPipe is more efficient and accurate than Haar Cascade.
     """
 
@@ -22,12 +24,41 @@ class FaceDetector:
         Args:
             min_detection_confidence: Minimum confidence threshold (0.0 to 1.0)
         """
-        self.mp_face_detection = mp.solutions.face_detection
-        self.detector = self.mp_face_detection.FaceDetection(
-            model_selection=0,  # 0 = short-range (close faces), 1 = full-range
-            min_detection_confidence=min_detection_confidence
-        )
-        self.mp_drawing = mp.solutions.drawing_utils
+        try:
+            # Create FaceDetector using MediaPipe Tasks
+            base_options = mp.tasks.BaseOptions(
+                model_asset_path=self._get_model_path()
+            )
+            options = vision.FaceDetectorOptions(
+                base_options=base_options,
+                min_detection_confidence=min_detection_confidence
+            )
+            self.detector = vision.FaceDetector.create_from_options(options)
+            self.use_tasks_api = True
+        except Exception as e:
+            print(f"Warning: Could not load MediaPipe Tasks API: {e}")
+            print("Falling back to Haar Cascade...")
+            self.use_tasks_api = False
+            self.detector = cv2.CascadeClassifier(
+                cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            )
+
+    def _get_model_path(self) -> str:
+        """Get path to face detection model."""
+        # Try to find the model in common locations
+        model_name = "face_landmarker.task"
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "..", "models", model_name),
+            os.path.expanduser(f"~/.cache/mediapipe/face_landmarker.task"),
+            f"/tmp/{model_name}"
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        
+        # If not found, return default - MediaPipe will handle it
+        return model_name
 
     def detect_faces(
         self, 
@@ -43,42 +74,59 @@ class FaceDetector:
             Tuple of (detections list, RGB frame)
             Each detection contains: 'bbox', 'confidence', 'face'
         """
-        # Convert BGR to RGB for MediaPipe
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.detector.process(rgb_frame)
-
-        detections = []
         frame_height, frame_width, _ = frame.shape
+        detections = []
 
-        if results.detections:
-            for detection in results.detections:
-                confidence = detection.location_data.relative_bounding_box
+        if self.use_tasks_api:
+            # Use MediaPipe Tasks API
+            try:
+                image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+                results = self.detector.detect(image)
                 
-                # Extract bounding box coordinates
-                x_min = int(confidence.xmin * frame_width)
-                y_min = int(confidence.ymin * frame_height)
-                width = int(confidence.width * frame_width)
-                height = int(confidence.height * frame_height)
-
-                # Add padding to ensure full face capture
-                padding = 10
-                x_min = max(0, x_min - padding)
-                y_min = max(0, y_min - padding)
-                x_max = min(frame_width, x_min + width + padding)
-                y_max = min(frame_height, y_min + height + padding)
-
-                # Crop face region
-                face_crop = frame[y_min:y_max, x_min:x_max].copy()
-
-                # Skip if face region is too small
-                if face_crop.shape[0] < 50 or face_crop.shape[1] < 50:
-                    continue
-
+                if results and results.detections:
+                    for detection in results.detections:
+                        # Get bounding box from detection
+                        bbox = detection.bounding_box
+                        x_min = int(bbox.origin_x)
+                        y_min = int(bbox.origin_y)
+                        x_max = int(bbox.origin_x + bbox.width)
+                        y_max = int(bbox.origin_y + bbox.height)
+                        
+                        # Ensure coordinates are within bounds
+                        x_min = max(0, x_min)
+                        y_min = max(0, y_min)
+                        x_max = min(frame_width, x_max)
+                        y_max = min(frame_height, y_max)
+                        
+                        # Crop face region
+                        if x_max > x_min and y_max > y_min:
+                            face_crop = frame[y_min:y_max, x_min:x_max].copy()
+                            
+                            detection_dict = {
+                                'bbox': (x_min, y_min, x_max, y_max),
+                                'confidence': detection.categories[0].score if detection.categories else 0.0,
+                                'face': face_crop,
+                                'center': ((x_min + x_max) // 2, (y_min + y_max) // 2)
+                            }
+                            detections.append(detection_dict)
+            except Exception as e:
+                print(f"MediaPipe detection error: {e}, falling back to Haar Cascade")
+                self.use_tasks_api = False
+        
+        if not self.use_tasks_api:
+            # Fallback to Haar Cascade
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = self.detector.detectMultiScale(gray, 1.1, 4)
+            
+            for (x, y, w, h) in faces:
+                face_crop = frame[y:y+h, x:x+w].copy()
+                
                 detection_dict = {
-                    'bbox': (x_min, y_min, x_max, y_max),
-                    'confidence': detection.detections[0].score[0] if hasattr(detection, 'detections') else 0.0,
+                    'bbox': (x, y, x+w, y+h),
+                    'confidence': 0.5,  # Default confidence for Haar Cascade
                     'face': face_crop,
-                    'center': ((x_min + x_max) // 2, (y_min + y_max) // 2)
+                    'center': ((x + x + w) // 2, (y + y + h) // 2)
                 }
                 detections.append(detection_dict)
 
@@ -119,12 +167,18 @@ class FaceDetector:
 
     def release(self):
         """Release MediaPipe resources."""
-        if self.detector:
-            self.detector.close()
+        if self.detector and self.use_tasks_api:
+            try:
+                self.detector.close()
+            except:
+                pass  # Ignore errors during cleanup
 
     def __del__(self):
         """Destructor to ensure resources are released."""
-        self.release()
+        try:
+            self.release()
+        except:
+            pass
 
 
 def resize_frame(frame: np.ndarray, max_width: int = 640) -> np.ndarray:
