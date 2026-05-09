@@ -1,0 +1,23 @@
+# Face Recognition Attendance System - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core Dependencies
+opencv-python==4.8.1.78          # Video processing and frame manipulation
+mediapipe==0.10.0                 # Face detection (lightweight, efficient)
+face-recognition==1.3.5           # Face encoding and matching (dlib ResNet)
+numpy==1.24.3                      # Numerical operations
+
+# Database
+# SQLite is built-in with Python
+
+# GUI
+# Tkinter is included with Python
+
+# Utilities
+psutil==5.9.5                      # System monitoring and information
+
+# Optional: Development and Testing
+# pytest==7.4.0                    # Testing framework
+# black==23.7.0                    # Code formatter
+# pylint==2.17.5                   # Code linter
+# mypy==1.4.1                      # Type checker
