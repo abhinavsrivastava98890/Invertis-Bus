@@ -5,7 +5,7 @@ const app = express();
 app.use(express.json()); // Parses incoming JSON payloads
 
 // Replace this with the Connection String from the "Drivers" menu in Atlas
-const uri = "mongodb+srv://shivamg0705_db_user:*shivii044*@gpstracker.7werti6.mongodb.net/?appName=GPSTracker";
+const uri = "mongodb+srv://shivamg0705_db_user:<password>@gpstracker.7werti6.mongodb.net/?appName=GPSTracker";
 const client = new MongoClient(uri);
 
 app.post('/api/gps', async (req, res) => {
