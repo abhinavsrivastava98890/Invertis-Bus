@@ -1,16 +1,47 @@
 """
-Face Recognition Module - Using face_recognition (dlib ResNet)
+Face Recognition Module - Using dlib ResNet directly
 Handles face encoding generation and face matching.
 """
 
-import face_recognition
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+import dlib
 import numpy as np
 from typing import Tuple, Optional, List
+import face_recognition
+
+# Load dlib models - global singletons
+_DLIB_DETECTOR = dlib.get_frontal_face_detector()
+_SHAPE_PREDICTOR = None
+_DLIB_RECOGNIZER = None
+
+def _get_shape_predictor():
+    """Load shape predictor (lazy load)."""
+    global _SHAPE_PREDICTOR
+    if _SHAPE_PREDICTOR is None:
+        model_path = "venv/lib/python3.12/site-packages/face_recognition_models/models/shape_predictor_68_face_landmarks.dat"
+        if os.path.exists(model_path):
+            _SHAPE_PREDICTOR = dlib.shape_predictor(model_path)
+        else:
+            print(f"Warning: Shape predictor not found at {model_path}")
+    return _SHAPE_PREDICTOR
+
+def _get_recognizer():
+    """Load recognizer model (lazy load)."""
+    global _DLIB_RECOGNIZER
+    if _DLIB_RECOGNIZER is None:
+        model_path = "venv/lib/python3.12/site-packages/face_recognition_models/models/dlib_face_recognition_resnet_model_v1.dat"
+        if os.path.exists(model_path):
+            _DLIB_RECOGNIZER = dlib.face_recognition_model_v1(model_path)
+        else:
+            print(f"Warning: Recognizer model not found at {model_path}")
+    return _DLIB_RECOGNIZER
 
 
 class FaceRecognizer:
     """
-    Face recognition using face_recognition library with dlib ResNet embeddings.
+    Face recognition using dlib ResNet embeddings directly.
     Generates 128-dimensional face encodings for comparison.
     """
 
@@ -23,36 +54,37 @@ class FaceRecognizer:
         Initialize face recognizer.
 
         Args:
-            model: Model to use - 'hog' (faster, CPU) or 'cnn' (slower, GPU)
+            model: Model to use for face detection - 'hog' (faster, CPU) or 'cnn' (slower, GPU)
             num_jitters: Number of times to re-sample (1 = fast, higher = accurate)
         """
-        self.model = model
+        self.detection_model = model
         self.num_jitters = num_jitters
 
     def get_face_encoding(self, face_image: np.ndarray) -> Optional[np.ndarray]:
         """
-        Generate face encoding from a face image.
+        Generate face encoding from a face image using dlib directly.
 
         Args:
-            face_image: Cropped face image (BGR format)
+            face_image: Cropped face image (BGR format from OpenCV)
 
         Returns:
             128-dimensional encoding or None if no face detected
         """
         try:
             # Convert BGR to RGB
-            rgb_image = face_recognition.load_image_file(face_image[:, :, ::-1])
-
-            # Get face encodings
-            encodings = face_recognition.face_encodings(
-                rgb_image,
-                model=self.model,
-                num_jitters=self.num_jitters
-            )
-
-            if len(encodings) > 0:
-                return encodings[0]  # Return first/largest face encoding
-            return None
+            rgb_image = face_image[:, :, ::-1]  # BGR to RGB
+            
+            # Get recognizer
+            recognizer = _get_recognizer()
+            if recognizer is None:
+                return None
+            
+            # Try to compute face encoding directly - dlib auto-detects faces
+            # This uses signature 2: (img, num_jitters) -> vector
+            # This should auto-detect the face in the cropped image
+            encoding = np.array(recognizer.compute_face_descriptor(rgb_image, self.num_jitters))
+            
+            return encoding
 
         except Exception as e:
             print(f"Error generating encoding: {e}")
@@ -137,7 +169,7 @@ class FaceRecognizer:
 
     def get_encoding_from_file(self, image_path: str) -> Optional[np.ndarray]:
         """
-        Load image from file and get encoding.
+        Load image from file and get encoding using dlib.
 
         Args:
             image_path: Path to image file
@@ -146,12 +178,18 @@ class FaceRecognizer:
             Face encoding or None
         """
         try:
-            image = face_recognition.load_image_file(image_path)
-            encodings = face_recognition.face_encodings(image, model=self.model)
-
-            if len(encodings) > 0:
-                return encodings[0]
-            return None
+            # Load image using dlib
+            image = dlib.load_rgb_image(image_path)
+            
+            # Get recognizer
+            recognizer = _get_recognizer()
+            if recognizer is None:
+                return None
+            
+            # Compute descriptor - let dlib auto-detect the face
+            encoding = np.array(recognizer.compute_face_descriptor(image, self.num_jitters))
+            
+            return encoding
 
         except Exception as e:
             print(f"Error loading image: {e}")
