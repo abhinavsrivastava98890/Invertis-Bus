@@ -62,7 +62,7 @@ class FaceRecognizer:
 
     def get_face_encoding(self, face_image: np.ndarray) -> Optional[np.ndarray]:
         """
-        Generate face encoding from a face image using dlib directly.
+        Generate face encoding from a face image.
 
         Args:
             face_image: Cropped face image (BGR format from OpenCV)
@@ -71,20 +71,26 @@ class FaceRecognizer:
             128-dimensional encoding or None if no face detected
         """
         try:
-            # Convert BGR to RGB
-            rgb_image = face_image[:, :, ::-1]  # BGR to RGB
+            # Convert BGR to RGB and ensure it's contiguous in memory for dlib
+            rgb_image = np.ascontiguousarray(face_image[:, :, ::-1])
             
-            # Get recognizer
-            recognizer = _get_recognizer()
-            if recognizer is None:
-                return None
+            # Since the image is already cropped to the face, we can tell face_recognition
+            # where the face is to save time and prevent it from missing tight crops.
+            # face_recognition format: (top, right, bottom, left)
+            h, w = rgb_image.shape[:2]
+            face_locations = [(0, w, h, 0)]
             
-            # Try to compute face encoding directly - dlib auto-detects faces
-            # This uses signature 2: (img, num_jitters) -> vector
-            # This should auto-detect the face in the cropped image
-            encoding = np.array(recognizer.compute_face_descriptor(rgb_image, self.num_jitters))
+            encodings = face_recognition.face_encodings(rgb_image, known_face_locations=face_locations, num_jitters=self.num_jitters)
             
-            return encoding
+            if encodings:
+                return encodings[0]
+            
+            # Fallback to auto-detection if manual bounds fail
+            encodings = face_recognition.face_encodings(rgb_image, num_jitters=self.num_jitters)
+            if encodings:
+                return encodings[0]
+                
+            return None
 
         except Exception as e:
             print(f"Error generating encoding: {e}")
