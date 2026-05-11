@@ -48,7 +48,7 @@ def main_registration():
         from modules.database import AttendanceDatabase
 
         db = AttendanceDatabase(db_path="data/attendance.db")
-        registration = LiveRegistration(num_captures=5)
+        registration = LiveRegistration(num_captures=100)
 
         print("\n" + "="*50)
         print("LIVE FACE REGISTRATION (CLI MODE)")
@@ -120,7 +120,7 @@ def main_cli():
 
         if choice == '1':
             from modules.registration import LiveRegistration
-            registration = LiveRegistration(num_captures=5)
+            registration = LiveRegistration(num_captures=100)
             success = registration.register_student_interactive(db)
             registration.release()
 

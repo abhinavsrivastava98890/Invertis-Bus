@@ -181,13 +181,13 @@ class FaceDetector:
             pass
 
 
-def resize_frame(frame: np.ndarray, max_width: int = 640) -> np.ndarray:
+def resize_frame(frame: np.ndarray, max_width: int = 800) -> np.ndarray:
     """
     Resize frame for faster processing while maintaining aspect ratio.
 
     Args:
         frame: Input frame
-        max_width: Maximum width (default 640 for real-time performance)
+        max_width: Maximum width (default 800 for better face detail and accuracy)
 
     Returns:
         Resized frame

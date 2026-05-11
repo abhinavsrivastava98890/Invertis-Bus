@@ -33,7 +33,7 @@ class RealtimeAttendance:
         self.duplicate_window_minutes = duplicate_window_minutes
 
         self.detector = FaceDetector(min_detection_confidence=0.7)
-        self.recognizer = FaceRecognizer(model="hog", num_jitters=1)
+        self.recognizer = FaceRecognizer(model="hog", num_jitters=2)
 
         # Cache for face encodings (to avoid repeated queries)
         self.cached_embeddings = {}
@@ -166,8 +166,8 @@ class RealtimeAttendance:
                     fps = 30 / (fps_end - fps_start)
                     fps_start = fps_end
 
-                # Resize for faster processing
-                frame = resize_frame(frame, max_width=640)
+                # Resize for faster processing, but preserve enough detail for accuracy
+                frame = resize_frame(frame, max_width=800)
                 display_frame = frame.copy()
 
                 # Detect faces

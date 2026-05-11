@@ -219,7 +219,8 @@ class AttendanceSystemGUI:
         # Run registration in thread to avoid GUI freeze
         def run_registration():
             try:
-                self.registration = LiveRegistration(num_captures=5)
+                # Capture 100 frames to ensure we have extremely robust, high-quality data
+                self.registration = LiveRegistration(num_captures=100)
 
                 face_images, success = self.registration.capture_faces()
 
