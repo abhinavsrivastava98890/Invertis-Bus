@@ -233,6 +233,43 @@ class AttendanceDatabase:
             print(f"Error updating fee status: {e}")
             return False
 
+    def update_student_details(
+        self,
+        student_id: str,
+        name: str,
+        fee_status: str,
+        phone: str,
+        email: str
+    ) -> bool:
+        """
+        Update all editable student details.
+
+        Args:
+            student_id: Student ID
+            name: New name
+            fee_status: 'paid' or 'unpaid'
+            phone: New phone number
+            email: New email
+
+        Returns:
+            True if successful
+        """
+        try:
+            self.cursor.execute(
+                """
+                UPDATE students 
+                SET name = ?, fee_status = ?, phone = ?, email = ?
+                WHERE student_id = ?
+                """,
+                (name, fee_status, phone, email, student_id)
+            )
+            self.conn.commit()
+            return self.cursor.rowcount > 0
+
+        except sqlite3.Error as e:
+            print(f"Error updating student details: {e}")
+            return False
+
     def get_all_students(self) -> List[Dict]:
         """
         Retrieve all registered students.
@@ -248,6 +285,38 @@ class AttendanceDatabase:
         except sqlite3.Error as e:
             print(f"Error retrieving students: {e}")
             return []
+
+    def delete_student(self, student_id: str) -> bool:
+        """
+        Delete a student and all their associated data (embeddings, attendance).
+
+        Args:
+            student_id: Student ID
+
+        Returns:
+            True if successful
+        """
+        try:
+            # First delete from attendance and embeddings explicitly
+            # in case foreign key cascades are disabled in sqlite
+            self.cursor.execute("DELETE FROM attendance WHERE student_id = ?", (student_id,))
+            self.cursor.execute("DELETE FROM embeddings WHERE student_id = ?", (student_id,))
+            
+            # Delete the student
+            self.cursor.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
+            
+            # Check if a student was actually deleted
+            if self.cursor.rowcount > 0:
+                self.conn.commit()
+                print(f"Student {student_id} and associated data deleted.")
+                return True
+            else:
+                print(f"Student {student_id} not found.")
+                return False
+
+        except sqlite3.Error as e:
+            print(f"Error deleting student: {e}")
+            return False
 
     # ==================== EMBEDDING OPERATIONS ====================
 
@@ -447,12 +516,12 @@ class AttendanceDatabase:
         try:
             self.cursor.execute("""
                 SELECT student_id, name, fee_status, COUNT(*) as count, 
-                       MIN(check_in_time) as first_check_in,
+                       MIN(check_in_time) as check_in_time,
                        MAX(check_in_time) as last_check_in
                 FROM attendance
                 WHERE DATE(check_in_time) = DATE('now')
                 GROUP BY student_id
-                ORDER BY first_check_in DESC
+                ORDER BY check_in_time DESC
             """)
             rows = self.cursor.fetchall()
             return [dict(row) for row in rows]
