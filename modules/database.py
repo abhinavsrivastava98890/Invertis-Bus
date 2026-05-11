@@ -166,6 +166,50 @@ class AttendanceDatabase:
             print(f"Error retrieving student: {e}")
             return None
 
+    def update_student(self, student_id: str, name: str, fee_status: str, phone: str, email: str) -> bool:
+        """
+        Update student details.
+
+        Args:
+            student_id: Student ID
+            name: New name
+            fee_status: New fee status
+            phone: New phone
+            email: New email
+
+        Returns:
+            True if successful
+        """
+        try:
+            self.cursor.execute("""
+                UPDATE students 
+                SET name = ?, fee_status = ?, phone = ?, email = ?
+                WHERE student_id = ?
+            """, (name, fee_status, phone, email, student_id))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error updating student: {e}")
+            return False
+
+    def delete_student(self, student_id: str) -> bool:
+        """
+        Delete a student and all their associated data (due to CASCADE).
+
+        Args:
+            student_id: Student ID to delete
+
+        Returns:
+            True if successful
+        """
+        try:
+            self.cursor.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error deleting student: {e}")
+            return False
+
     def update_fee_status(self, student_id: str, fee_status: str) -> bool:
         """
         Update student fee status.

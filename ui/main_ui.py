@@ -451,31 +451,156 @@ class AttendanceSystemGUI:
             text="Admin Management",
             font=("Arial", 14, "bold")
         )
-        title_label.pack(pady=20)
+        title_label.pack(pady=10)
 
-        # Students management frame
-        students_frame = ttk.LabelFrame(tab, text="Students Management", padding=15)
-        students_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        # Content frame (two columns)
+        content_frame = ttk.Frame(tab)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        # View all students
+        # --- Left Column: Students List ---
+        left_frame = ttk.Frame(content_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+
+        students_frame = ttk.LabelFrame(left_frame, text="All Registered Students", padding=15)
+        students_frame.pack(fill=tk.BOTH, expand=True)
+
         view_btn = ttk.Button(
             students_frame,
-            text="View All Registered Students",
+            text="Refresh List",
             command=self.view_all_students
         )
-        view_btn.pack(pady=10)
+        view_btn.pack(pady=5)
 
-        # Students display
         self.admin_text = scrolledtext.ScrolledText(
             students_frame,
             height=15,
-            width=70,
+            width=50,
             state=tk.DISABLED
         )
-        self.admin_text.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.admin_text.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # --- Right Column: Edit/Delete ---
+        right_frame = ttk.Frame(content_frame)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+
+        edit_frame = ttk.LabelFrame(right_frame, text="Edit / Delete Student", padding=15)
+        edit_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Search by ID
+        search_frame = ttk.Frame(edit_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 15))
+        ttk.Label(search_frame, text="Student ID:").pack(side=tk.LEFT, padx=5)
+        self.edit_search_id = ttk.Entry(search_frame, width=15)
+        self.edit_search_id.pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text="Load", command=self.load_student_for_edit).pack(side=tk.LEFT, padx=5)
+
+        # Edit Form
+        form_frame = ttk.Frame(edit_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.edit_name = ttk.Entry(form_frame, width=25)
+        self.edit_name.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(form_frame, text="Fee Status:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.edit_fee_status = ttk.Combobox(form_frame, values=["unpaid", "paid"], state="readonly", width=22)
+        self.edit_fee_status.grid(row=1, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(form_frame, text="Phone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.edit_phone = ttk.Entry(form_frame, width=25)
+        self.edit_phone.grid(row=2, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(form_frame, text="Email:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.edit_email = ttk.Entry(form_frame, width=25)
+        self.edit_email.grid(row=3, column=1, sticky=tk.EW, pady=5)
+
+        # Action Buttons
+        btn_frame = ttk.Frame(edit_frame)
+        btn_frame.pack(fill=tk.X, pady=20)
+        
+        ttk.Button(btn_frame, text="Update", command=self.update_student_action).pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+        ttk.Button(btn_frame, text="Delete", command=self.delete_student_action).pack(side=tk.RIGHT, padx=5, expand=True, fill=tk.X)
 
         # Initial load
         self.view_all_students()
+
+    def load_student_for_edit(self):
+        """Load student details into the edit form."""
+        student_id = self.edit_search_id.get().strip()
+        if not student_id:
+            messagebox.showwarning("Warning", "Please enter a Student ID")
+            return
+            
+        student = self.db.get_student(student_id)
+        if not student:
+            messagebox.showerror("Error", f"Student with ID '{student_id}' not found.")
+            return
+            
+        self.edit_name.delete(0, tk.END)
+        self.edit_name.insert(0, student.get('name', ''))
+        
+        self.edit_fee_status.set(student.get('fee_status', 'unpaid'))
+        
+        self.edit_phone.delete(0, tk.END)
+        self.edit_phone.insert(0, student.get('phone', '') or '')
+        
+        self.edit_email.delete(0, tk.END)
+        self.edit_email.insert(0, student.get('email', '') or '')
+
+    def update_student_action(self):
+        """Update student details in the database."""
+        student_id = self.edit_search_id.get().strip()
+        if not student_id:
+            messagebox.showwarning("Warning", "Please load a student first")
+            return
+            
+        name = self.edit_name.get().strip()
+        fee_status = self.edit_fee_status.get()
+        phone = self.edit_phone.get().strip()
+        email = self.edit_email.get().strip()
+        
+        if not name:
+            messagebox.showerror("Error", "Name cannot be empty")
+            return
+            
+        if self.db.update_student(student_id, name, fee_status, phone, email):
+            messagebox.showinfo("Success", f"Student {student_id} updated successfully!")
+            log_message(f"Student updated: {name} ({student_id})")
+            self.view_all_students()
+            self.refresh_statistics()
+        else:
+            messagebox.showerror("Error", "Failed to update student")
+
+    def delete_student_action(self):
+        """Delete student from database."""
+        student_id = self.edit_search_id.get().strip()
+        if not student_id:
+            messagebox.showwarning("Warning", "Please load a student first")
+            return
+            
+        name = self.edit_name.get().strip()
+        
+        confirm = messagebox.askyesno(
+            "Confirm Delete", 
+            f"Are you sure you want to completely delete {name} ({student_id})?\n\nThis will remove their registration, face data, and attendance records permanently."
+        )
+        
+        if confirm:
+            if self.db.delete_student(student_id):
+                messagebox.showinfo("Success", f"Student {student_id} deleted successfully!")
+                log_message(f"Student deleted: {student_id}")
+                
+                # Clear form
+                self.edit_search_id.delete(0, tk.END)
+                self.edit_name.delete(0, tk.END)
+                self.edit_phone.delete(0, tk.END)
+                self.edit_email.delete(0, tk.END)
+                self.edit_fee_status.set('')
+                
+                self.view_all_students()
+                self.refresh_statistics()
+            else:
+                messagebox.showerror("Error", "Failed to delete student")
 
     def view_all_students(self):
         """Display all registered students."""
