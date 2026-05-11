@@ -8,6 +8,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import dlib
 import numpy as np
+import math
 from typing import Tuple, Optional, List
 import face_recognition
 
@@ -71,30 +72,89 @@ class FaceRecognizer:
             128-dimensional encoding or None if no face detected
         """
         try:
-            # Convert BGR to RGB
-            rgb_image = face_image[:, :, ::-1]  # BGR to RGB
+            # Convert BGR to RGB and ensure it is contiguous in memory
+            rgb_image = np.ascontiguousarray(face_image[:, :, ::-1])
             
-            # Get recognizer
-            recognizer = _get_recognizer()
-            if recognizer is None:
-                return None
+            # Since face_image is already a cropped face, we tell face_recognition 
+            # that the face occupies the entire image. Format: (top, right, bottom, left)
+            h, w = rgb_image.shape[:2]
+            locations = [(0, w, h, 0)]
             
-            # Try to compute face encoding directly - dlib auto-detects faces
-            # This uses signature 2: (img, num_jitters) -> vector
-            # This should auto-detect the face in the cropped image
-            encoding = np.array(recognizer.compute_face_descriptor(rgb_image, self.num_jitters))
+            # This handles the 68-point landmarks and 150x150 face chipping automatically
+            encodings = face_recognition.face_encodings(
+                rgb_image, 
+                known_face_locations=locations, 
+                num_jitters=self.num_jitters
+            )
             
-            return encoding
+            if encodings:
+                return encodings[0]
+                
+            # Fallback: let face_recognition detect the face location itself if the explicit box failed
+            encodings = face_recognition.face_encodings(rgb_image, num_jitters=self.num_jitters)
+            if encodings:
+                return encodings[0]
+                
+            return None
 
         except Exception as e:
             print(f"Error generating encoding: {e}")
+            return None
+
+    def get_eye_aspect_ratio(self, face_image: np.ndarray) -> Optional[float]:
+        """
+        Calculate the Eye Aspect Ratio (EAR) for blink detection.
+        
+        Args:
+            face_image: Cropped face image (BGR format)
+            
+        Returns:
+            Average EAR of both eyes, or None if eyes not detected
+        """
+        try:
+            rgb_image = np.ascontiguousarray(face_image[:, :, ::-1])
+            h, w = rgb_image.shape[:2]
+            locations = [(0, w, h, 0)]
+            
+            landmarks_list = face_recognition.face_landmarks(rgb_image, face_locations=locations)
+            
+            if not landmarks_list:
+                # Fallback to auto-detection
+                landmarks_list = face_recognition.face_landmarks(rgb_image)
+                
+            if not landmarks_list:
+                return None
+                
+            landmarks = landmarks_list[0]
+            
+            if 'left_eye' not in landmarks or 'right_eye' not in landmarks:
+                return None
+                
+            def calculate_ear(eye_points):
+                # Compute the euclidean distances between the two sets of vertical eye landmarks
+                A = math.dist(eye_points[1], eye_points[5])
+                B = math.dist(eye_points[2], eye_points[4])
+                # Compute the euclidean distance between the horizontal eye landmark
+                C = math.dist(eye_points[0], eye_points[3])
+                # EAR formula
+                ear = (A + B) / (2.0 * C)
+                return ear
+                
+            left_ear = calculate_ear(landmarks['left_eye'])
+            right_ear = calculate_ear(landmarks['right_eye'])
+            
+            # Return the average EAR
+            return (left_ear + right_ear) / 2.0
+            
+        except Exception as e:
+            # Silently fail for EAR, just return None
             return None
 
     def compare_faces(
         self,
         encoding: np.ndarray,
         stored_encodings: List[np.ndarray],
-        tolerance: float = 0.6
+        tolerance: float = 0.45
     ) -> List[bool]:
         """
         Compare a face encoding against multiple stored encodings.
@@ -102,7 +162,7 @@ class FaceRecognizer:
         Args:
             encoding: Test face encoding
             stored_encodings: List of stored face encodings
-            tolerance: How much distance to tolerate (0.6 = default)
+            tolerance: How much distance to tolerate (0.45 = default, stricter to prevent false positives)
 
         Returns:
             List of boolean matches
@@ -134,7 +194,7 @@ class FaceRecognizer:
         self,
         encoding: np.ndarray,
         stored_encodings: List[Tuple[np.ndarray, str]],
-        tolerance: float = 0.6
+        tolerance: float = 0.45
     ) -> Tuple[Optional[str], float]:
         """
         Find best matching stored face.
