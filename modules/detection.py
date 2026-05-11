@@ -93,21 +93,31 @@ class FaceDetector:
                         x_max = int(bbox.origin_x + bbox.width)
                         y_max = int(bbox.origin_y + bbox.height)
                         
-                        # Ensure coordinates are within bounds
-                        x_min = max(0, x_min)
-                        y_min = max(0, y_min)
-                        x_max = min(frame_width, x_max)
-                        y_max = min(frame_height, y_max)
+                        # Add a margin around the face for better recognition accuracy
+                        margin_x = int((x_max - x_min) * 0.2)
+                        margin_y = int((y_max - y_min) * 0.2)
+                        
+                        # Ensure coordinates are within bounds for drawing
+                        x_min_draw = max(0, x_min)
+                        y_min_draw = max(0, y_min)
+                        x_max_draw = min(frame_width, x_max)
+                        y_max_draw = min(frame_height, y_max)
+                        
+                        # Coordinates for cropping with margin
+                        c_x_min = max(0, x_min - margin_x)
+                        c_y_min = max(0, int(y_min - margin_y * 1.5)) # More margin on top
+                        c_x_max = min(frame_width, x_max + margin_x)
+                        c_y_max = min(frame_height, y_max + margin_y)
                         
                         # Crop face region
-                        if x_max > x_min and y_max > y_min:
-                            face_crop = frame[y_min:y_max, x_min:x_max].copy()
+                        if c_x_max > c_x_min and c_y_max > c_y_min:
+                            face_crop = frame[c_y_min:c_y_max, c_x_min:c_x_max].copy()
                             
                             detection_dict = {
-                                'bbox': (x_min, y_min, x_max, y_max),
+                                'bbox': (x_min_draw, y_min_draw, x_max_draw, y_max_draw),
                                 'confidence': detection.categories[0].score if detection.categories else 0.0,
                                 'face': face_crop,
-                                'center': ((x_min + x_max) // 2, (y_min + y_max) // 2)
+                                'center': ((x_min_draw + x_max_draw) // 2, (y_min_draw + y_max_draw) // 2)
                             }
                             detections.append(detection_dict)
             except Exception as e:
@@ -120,7 +130,16 @@ class FaceDetector:
             faces = self.detector.detectMultiScale(gray, 1.1, 4)
             
             for (x, y, w, h) in faces:
-                face_crop = frame[y:y+h, x:x+w].copy()
+                # Add margin
+                margin_x = int(w * 0.2)
+                margin_y = int(h * 0.2)
+                
+                c_x_min = max(0, x - margin_x)
+                c_y_min = max(0, int(y - margin_y * 1.5))
+                c_x_max = min(frame_width, x + w + margin_x)
+                c_y_max = min(frame_height, y + h + margin_y)
+                
+                face_crop = frame[c_y_min:c_y_max, c_x_min:c_x_max].copy()
                 
                 detection_dict = {
                     'bbox': (x, y, x+w, y+h),
