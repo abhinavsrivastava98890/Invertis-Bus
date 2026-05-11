@@ -272,9 +272,8 @@ class AttendanceSystemGUI:
                 messagebox.showerror("Error", f"Registration failed: {e}")
                 log_message(f"Registration error: {e}")
 
-        thread = threading.Thread(target=run_registration)
-        thread.daemon = True
-        thread.start()
+        # Run on main thread to prevent OpenCV crashes on macOS
+        run_registration()
 
     def create_recognition_tab(self):
         """Create real-time recognition tab."""
@@ -303,7 +302,7 @@ class AttendanceSystemGUI:
             orient=tk.HORIZONTAL,
             length=200
         )
-        self.rec_threshold.set(0.6)
+        self.rec_threshold.set(0.45)
         self.rec_threshold.pack(side=tk.LEFT, padx=5)
 
         # Start button
@@ -346,9 +345,8 @@ class AttendanceSystemGUI:
                 messagebox.showerror("Error", f"Recognition failed: {e}")
                 log_message(f"Recognition error: {e}")
 
-        thread = threading.Thread(target=run_recognition)
-        thread.daemon = True
-        thread.start()
+        # Run on main thread to prevent OpenCV crashes on macOS
+        run_recognition()
 
     def create_attendance_tab(self):
         """Create attendance viewing tab."""
@@ -474,8 +472,118 @@ class AttendanceSystemGUI:
         )
         self.admin_text.pack(fill=tk.BOTH, expand=True, pady=10)
 
+        # Manage student frame
+        manage_frame = ttk.LabelFrame(tab, text="Manage Student", padding=15)
+        manage_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(manage_frame, text="Student ID:").pack(side=tk.LEFT, padx=5)
+        self.mng_student_id = ttk.Entry(manage_frame, width=15)
+        self.mng_student_id.pack(side=tk.LEFT, padx=5)
+
+        edit_btn = ttk.Button(
+            manage_frame,
+            text="Edit Details",
+            command=self.open_edit_student_dialog
+        )
+        edit_btn.pack(side=tk.LEFT, padx=5)
+
+        delete_btn = ttk.Button(
+            manage_frame,
+            text="Delete Student",
+            command=self.delete_student_gui
+        )
+        delete_btn.pack(side=tk.LEFT, padx=5)
+
         # Initial load
         self.view_all_students()
+
+    def delete_student_gui(self):
+        """Handle deleting a student from the GUI."""
+        student_id = self.mng_student_id.get().strip()
+        if not student_id:
+            messagebox.showerror("Error", "Please enter a student ID to delete")
+            return
+
+        confirm = messagebox.askyesno(
+            "Confirm Deletion",
+            f"Are you sure you want to delete student '{student_id}' and all their face data?"
+        )
+        if confirm:
+            if self.db.delete_student(student_id):
+                messagebox.showinfo("Success", f"Student {student_id} has been deleted.")
+                log_message(f"Deleted student {student_id}")
+                self.mng_student_id.delete(0, tk.END)
+                self.view_all_students()
+                self.refresh_statistics()
+            else:
+                messagebox.showerror("Error", f"Failed to delete student {student_id}. They may not exist.")
+
+    def open_edit_student_dialog(self):
+        """Open a dialog to edit student details."""
+        student_id = self.mng_student_id.get().strip()
+        if not student_id:
+            messagebox.showerror("Error", "Please enter a student ID to edit")
+            return
+
+        student = self.db.get_student(student_id)
+        if not student:
+            messagebox.showerror("Error", f"Student {student_id} not found.")
+            return
+
+        # Create Toplevel window
+        edit_win = tk.Toplevel(self.root)
+        edit_win.title(f"Edit Student - {student_id}")
+        edit_win.geometry("350x300")
+        edit_win.transient(self.root)
+        edit_win.grab_set()
+
+        form_frame = ttk.Frame(edit_win, padding=20)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Name
+        ttk.Label(form_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        name_entry = ttk.Entry(form_frame, width=25)
+        name_entry.insert(0, student.get("name", ""))
+        name_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        # Fee Status
+        ttk.Label(form_frame, text="Fee Status:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        fee_cb = ttk.Combobox(form_frame, values=["paid", "unpaid"], state="readonly", width=23)
+        fee_cb.set(student.get("fee_status", "unpaid").lower())
+        fee_cb.grid(row=1, column=1, sticky=tk.EW, pady=5)
+
+        # Phone
+        ttk.Label(form_frame, text="Phone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        phone_entry = ttk.Entry(form_frame, width=25)
+        phone_entry.insert(0, student.get("phone", "") or "")
+        phone_entry.grid(row=2, column=1, sticky=tk.EW, pady=5)
+
+        # Email
+        ttk.Label(form_frame, text="Email:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        email_entry = ttk.Entry(form_frame, width=25)
+        email_entry.insert(0, student.get("email", "") or "")
+        email_entry.grid(row=3, column=1, sticky=tk.EW, pady=5)
+
+        def save_details():
+            new_name = name_entry.get().strip()
+            new_fee = fee_cb.get().strip()
+            new_phone = phone_entry.get().strip()
+            new_email = email_entry.get().strip()
+
+            if not new_name:
+                messagebox.showerror("Error", "Name cannot be empty", parent=edit_win)
+                return
+
+            if self.db.update_student_details(student_id, new_name, new_fee, new_phone, new_email):
+                messagebox.showinfo("Success", "Student details updated.", parent=edit_win)
+                log_message(f"Updated details for student {student_id}")
+                self.view_all_students()
+                edit_win.destroy()
+            else:
+                messagebox.showerror("Error", "Failed to update details.", parent=edit_win)
+
+        save_btn = ttk.Button(form_frame, text="Save Changes", command=save_details)
+        save_btn.grid(row=4, column=0, columnspan=2, pady=20)
 
     def view_all_students(self):
         """Display all registered students."""
@@ -548,7 +656,7 @@ FACE RECOGNITION ATTENDANCE SYSTEM - QUICK START
 
 2. RECOGNITION
    - Go to 'Recognition' tab
-   - Set confidence threshold (0.6 recommended)
+   - Set confidence threshold (0.45 recommended)
    - Click 'Start Recognition'
    - Webcam will show live recognition
    - Green box: Paid fee (Access Granted)

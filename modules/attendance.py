@@ -19,7 +19,7 @@ class RealtimeAttendance:
 
     def __init__(
         self,
-        confidence_threshold: float = 0.6,
+        confidence_threshold: float = 0.45,
         duplicate_window_minutes: int = 5
     ):
         """
@@ -39,6 +39,9 @@ class RealtimeAttendance:
         self.cached_embeddings = {}
         self.cache_timestamp = 0
         self.cache_ttl = 60  # Cache valid for 60 seconds
+        
+        # State tracking for liveness (blink detection)
+        self.liveness_state = {}
 
     def update_embeddings_cache(self, database) -> int:
         """
@@ -239,22 +242,61 @@ class RealtimeAttendance:
                                 2
                             )
 
-                            # Log attendance if not recently logged
+                            # Handle Liveness Detection
                             current_time = time.time()
-                            if student_id not in recognized_faces or \
-                               (current_time - recognized_faces[student_id]) > (self.duplicate_window_minutes * 60):
+                            if student_id not in self.liveness_state:
+                                self.liveness_state[student_id] = {
+                                    'blinked': False, 
+                                    'eyes_closed_frames': 0,
+                                    'last_seen': current_time
+                                }
+                            
+                            # Reset liveness if the person has been out of frame for more than 4 seconds
+                            if current_time - self.liveness_state[student_id].get('last_seen', current_time) > 4.0:
+                                self.liveness_state[student_id]['blinked'] = False
+                                self.liveness_state[student_id]['eyes_closed_frames'] = 0
+                                
+                            self.liveness_state[student_id]['last_seen'] = current_time
+                                
+                            is_live = self.liveness_state[student_id]['blinked']
+                            
+                            if not is_live:
+                                # Not yet verified as live, check for blink
+                                ear = self.recognizer.get_eye_aspect_ratio(face_image)
+                                if ear is not None:
+                                    if ear < 0.21:  # Threshold for closed eyes (stricter)
+                                        self.liveness_state[student_id]['eyes_closed_frames'] += 1
+                                    elif ear >= 0.21 and self.liveness_state[student_id]['eyes_closed_frames'] >= 1:
+                                        self.liveness_state[student_id]['blinked'] = True
+                                        is_live = True
+                                        
+                            if not is_live:
+                                # Prompt user to blink
+                                cv2.putText(
+                                    display_frame,
+                                    "Please blink to verify...",
+                                    (x_min, y_max + 75),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.7,
+                                    (0, 165, 255),  # Orange
+                                    2
+                                )
+                            else:
+                                # Log attendance if not recently logged and verified live
+                                if student_id not in recognized_faces or \
+                                   (current_time - recognized_faces[student_id]) > (self.duplicate_window_minutes * 60):
 
-                                # Check database for recent attendance
-                                if not database.check_duplicate_attendance(student_id, self.duplicate_window_minutes):
-                                    database.log_attendance(
-                                        student_id=student_id,
-                                        name=name,
-                                        fee_status=fee_status,
-                                        confidence=confidence,
-                                        device_id="webcam"
-                                    )
-                                    recognized_faces[student_id] = current_time
-                                    print(f"✓ Attendance logged: {name} ({student_id}) - {fee_status.upper()}")
+                                    # Check database for recent attendance
+                                    if not database.check_duplicate_attendance(student_id, self.duplicate_window_minutes):
+                                        database.log_attendance(
+                                            student_id=student_id,
+                                            name=name,
+                                            fee_status=fee_status,
+                                            confidence=confidence,
+                                            device_id="webcam"
+                                        )
+                                        recognized_faces[student_id] = current_time
+                                        print(f"✓ Attendance logged: {name} ({student_id}) - {fee_status.upper()} (LIVE)")
 
                         else:
                             # Face not recognized
