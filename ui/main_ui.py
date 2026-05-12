@@ -219,8 +219,8 @@ class AttendanceSystemGUI:
         # Run registration in thread to avoid GUI freeze
         def run_registration():
             try:
-                # Capture 100 frames to ensure we have extremely robust, high-quality data
-                self.registration = LiveRegistration(num_captures=100)
+                # Capture 100 frames rapidly (interval 0.2s) for an incredibly dense, robust dataset
+                self.registration = LiveRegistration(num_captures=100, capture_interval=0.2)
 
                 face_images, success = self.registration.capture_faces()
 
@@ -303,7 +303,7 @@ class AttendanceSystemGUI:
             orient=tk.HORIZONTAL,
             length=200
         )
-        self.rec_threshold.set(0.45)
+        self.rec_threshold.set(0.55)
         self.rec_threshold.pack(side=tk.LEFT, padx=5)
 
         # Start button

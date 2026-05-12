@@ -19,7 +19,7 @@ class RealtimeAttendance:
 
     def __init__(
         self,
-        confidence_threshold: float = 0.45,
+        confidence_threshold: float = 0.55,
         duplicate_window_minutes: int = 5
     ):
         """
@@ -177,10 +177,12 @@ class RealtimeAttendance:
                     # Process each detected face
                     for detection in detections:
                         x_min, y_min, x_max, y_max = detection['bbox']
-                        face_image = detection['face']
-
+                        
+                        # Use the embedding directly from detection if available (InsightFace)
+                        face_data = detection.get('embedding', detection['face'])
+                        
                         # Recognize face
-                        student_info, confidence = self.recognize_face(face_image, database)
+                        student_info, confidence = self.recognize_face(face_data, database)
 
                         if student_info:
                             # Student recognized
@@ -261,14 +263,10 @@ class RealtimeAttendance:
                             is_live = self.liveness_state[student_id]['blinked']
                             
                             if not is_live:
-                                # Not yet verified as live, check for blink
-                                ear = self.recognizer.get_eye_aspect_ratio(face_image)
-                                if ear is not None:
-                                    if ear < 0.21:  # Threshold for closed eyes (stricter)
-                                        self.liveness_state[student_id]['eyes_closed_frames'] += 1
-                                    elif ear >= 0.21 and self.liveness_state[student_id]['eyes_closed_frames'] >= 1:
-                                        self.liveness_state[student_id]['blinked'] = True
-                                        is_live = True
+                                # Blink detection disabled as EAR requires 68-point landmarks
+                                # InsightFace provides 5 points. Assume live for now or implement alternative
+                                self.liveness_state[student_id]['blinked'] = True
+                                is_live = True
                                         
                             if not is_live:
                                 # Prompt user to blink

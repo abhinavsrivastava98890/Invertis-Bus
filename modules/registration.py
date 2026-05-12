@@ -20,7 +20,7 @@ class LiveRegistration:
     def __init__(
         self,
         num_captures: int = 100,
-        capture_interval: float = 0.5,
+        capture_interval: float = 0.2,
         min_face_area: int = 15000
     ):
         """
@@ -36,7 +36,10 @@ class LiveRegistration:
         self.min_face_area = min_face_area
 
         self.detector = FaceDetector(min_detection_confidence=0.7)
-        self.recognizer = FaceRecognizer(model="hog", num_jitters=100)
+        self.recognizer = FaceRecognizer()
+        
+        # Cache for embeddings during capture phase
+        self.captured_embeddings: List[np.ndarray] = []
 
     def capture_faces(
         self,
@@ -60,6 +63,7 @@ class LiveRegistration:
             return [], False
 
         captured_faces = []
+        self.captured_embeddings = []
         start_time = time.time()
         last_capture_time = 0
 
@@ -122,6 +126,8 @@ class LiveRegistration:
 
                         if face_area >= self.min_face_area:
                             captured_faces.append(largest_detection['face'].copy())
+                            if 'embedding' in largest_detection:
+                                self.captured_embeddings.append(largest_detection['embedding'])
                             last_capture_time = current_time
                             print(f"  - Captured frame {len(captured_faces)}/{self.num_captures}")
 
@@ -166,54 +172,47 @@ class LiveRegistration:
         success = len(captured_faces) == self.num_captures
         return captured_faces, success
 
-    def generate_encodings(
-        self,
-        face_images: List[np.ndarray]
-    ) -> List[Tuple[np.ndarray, float]]:
+    def generate_encodings(self, face_images: List[np.ndarray]) -> List[Tuple[np.ndarray, float]]:
         """
-        Generate face encodings from captured images.
+        Generate encodings using internally cached embeddings from the capture phase.
+        We ignore the passed face_images to avoid re-running detection on tight crops.
 
         Args:
-            face_images: List of face images
+            face_images: List of captured faces (kept for signature compatibility)
 
         Returns:
             List of (encoding, quality_score) tuples
         """
+        print(f"Generating {len(self.captured_embeddings)} face encodings...")
+        
         encodings = []
-
-        print(f"Generating {len(face_images)} face encodings...")
-
-        for i, face_image in enumerate(face_images):
-            try:
-                encoding = self.recognizer.get_face_encoding(face_image)
-
-                if encoding is not None:
-                    # Simple quality score based on encoding magnitude
-                    quality = np.linalg.norm(encoding) / 128.0  # Normalize by dimension
-                    encodings.append((encoding, quality))
-                    print(f"  - Encoding {i+1}/{len(face_images)}: Generated")
-                else:
-                    print(f"  - Encoding {i+1}/{len(face_images)}: Failed to extract face")
-
-            except Exception as e:
-                print(f"  - Encoding {i+1}/{len(face_images)}: Error - {e}")
+        for i, embedding in enumerate(self.captured_embeddings):
+            # The embedding is already a normalized 512D array from InsightFace
+            # We can set a default quality score of 1.0 since InsightFace already filtered it
+            encodings.append((embedding, 1.0))
+            print(f"  - Encoding {i+1}/{len(self.captured_embeddings)}: Generated")
 
         return encodings
 
     def average_encoding(self, encodings: List[np.ndarray]) -> np.ndarray:
         """
         Average multiple face encodings for more robust matching.
+        The resulting vector must be L2 normalized for Cosine Similarity.
 
         Args:
             encodings: List of face encodings
 
         Returns:
-            Averaged encoding
+            Normalized averaged encoding
         """
         if len(encodings) == 0:
             raise ValueError("No encodings provided")
 
-        return np.mean(encodings, axis=0)
+        avg = np.mean(encodings, axis=0)
+        norm = np.linalg.norm(avg)
+        if norm > 0:
+            avg = avg / norm
+        return avg
 
     def select_best_encodings(
         self,

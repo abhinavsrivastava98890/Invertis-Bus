@@ -1,64 +1,25 @@
 """
-Face Detection Module - Using MediaPipe (v0.10+)
-Handles face detection from webcam frames and returns bounding boxes.
+Face Detection Module - Using InsightFace (MobileFaceNet)
+Handles face detection from webcam frames and returns bounding boxes and embeddings.
 """
 
 import cv2
-import mediapipe as mp
-from mediapipe.tasks.python import vision
 import numpy as np
 from typing import List, Tuple, Optional
-import os
-
+from modules.recognition import _get_insightface_app
 
 class FaceDetector:
     """
-    Face detection using MediaPipe Tasks API.
-    MediaPipe is more efficient and accurate than Haar Cascade.
+    Face detection using InsightFace RetinaFace.
+    This replaces MediaPipe to perfectly integrate with MobileFaceNet.
     """
 
     def __init__(self, min_detection_confidence: float = 0.5):
         """
-        Initialize MediaPipe face detection.
-
-        Args:
-            min_detection_confidence: Minimum confidence threshold (0.0 to 1.0)
+        Initialize InsightFace detection.
         """
-        try:
-            # Create FaceDetector using MediaPipe Tasks
-            base_options = mp.tasks.BaseOptions(
-                model_asset_path=self._get_model_path()
-            )
-            options = vision.FaceDetectorOptions(
-                base_options=base_options,
-                min_detection_confidence=min_detection_confidence
-            )
-            self.detector = vision.FaceDetector.create_from_options(options)
-            self.use_tasks_api = True
-        except Exception as e:
-            print(f"Warning: Could not load MediaPipe Tasks API: {e}")
-            print("Falling back to Haar Cascade...")
-            self.use_tasks_api = False
-            self.detector = cv2.CascadeClassifier(
-                cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-            )
-
-    def _get_model_path(self) -> str:
-        """Get path to face detection model."""
-        # Try to find the model in common locations
-        model_name = "face_landmarker.task"
-        possible_paths = [
-            os.path.join(os.path.dirname(__file__), "..", "models", model_name),
-            os.path.expanduser(f"~/.cache/mediapipe/face_landmarker.task"),
-            f"/tmp/{model_name}"
-        ]
-        
-        for path in possible_paths:
-            if os.path.exists(path):
-                return path
-        
-        # If not found, return default - MediaPipe will handle it
-        return model_name
+        self.app = _get_insightface_app()
+        self.min_confidence = min_detection_confidence
 
     def detect_faces(
         self, 
@@ -72,63 +33,43 @@ class FaceDetector:
 
         Returns:
             Tuple of (detections list, RGB frame)
-            Each detection contains: 'bbox', 'confidence', 'face'
+            Each detection contains: 'bbox', 'confidence', 'face' (which is the embedding)
         """
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_height, frame_width, _ = frame.shape
         detections = []
 
-        if self.use_tasks_api:
-            # Use MediaPipe Tasks API
-            try:
-                image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-                results = self.detector.detect(image)
-                
-                if results and results.detections:
-                    for detection in results.detections:
-                        # Get bounding box from detection
-                        bbox = detection.bounding_box
-                        x_min = int(bbox.origin_x)
-                        y_min = int(bbox.origin_y)
-                        x_max = int(bbox.origin_x + bbox.width)
-                        y_max = int(bbox.origin_y + bbox.height)
-                        
-                        # Ensure coordinates are within bounds
-                        x_min = max(0, x_min)
-                        y_min = max(0, y_min)
-                        x_max = min(frame_width, x_max)
-                        y_max = min(frame_height, y_max)
-                        
-                        # Crop face region
-                        if x_max > x_min and y_max > y_min:
-                            face_crop = frame[y_min:y_max, x_min:x_max].copy()
-                            
-                            detection_dict = {
-                                'bbox': (x_min, y_min, x_max, y_max),
-                                'confidence': detection.categories[0].score if detection.categories else 0.0,
-                                'face': face_crop,
-                                'center': ((x_min + x_max) // 2, (y_min + y_max) // 2)
-                            }
-                            detections.append(detection_dict)
-            except Exception as e:
-                print(f"MediaPipe detection error: {e}, falling back to Haar Cascade")
-                self.use_tasks_api = False
-        
-        if not self.use_tasks_api:
-            # Fallback to Haar Cascade
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = self.detector.detectMultiScale(gray, 1.1, 4)
+        if self.app is not None:
+            faces = self.app.get(frame)
             
-            for (x, y, w, h) in faces:
-                face_crop = frame[y:y+h, x:x+w].copy()
-                
-                detection_dict = {
-                    'bbox': (x, y, x+w, y+h),
-                    'confidence': 0.5,  # Default confidence for Haar Cascade
-                    'face': face_crop,
-                    'center': ((x + x + w) // 2, (y + y + h) // 2)
-                }
-                detections.append(detection_dict)
+            for face in faces:
+                if face.det_score >= self.min_confidence:
+                    bbox = face.bbox.astype(int)
+                    
+                    # Extract bounding box to create face_crop for UI
+                    x_min = max(0, bbox[0])
+                    y_min = max(0, bbox[1])
+                    x_max = min(frame.shape[1], bbox[2])
+                    y_max = min(frame.shape[0], bbox[3])
+                    
+                    if x_max > x_min and y_max > y_min:
+                        face_crop = frame[y_min:y_max, x_min:x_max].copy()
+                    else:
+                        face_crop = np.zeros((10, 10, 3), dtype=np.uint8)
+                    
+                    # Normalize the embedding for Cosine Similarity
+                    embedding = face.embedding
+                    norm = np.linalg.norm(embedding)
+                    if norm > 0:
+                        embedding = embedding / norm
+                        
+                    detection_dict = {
+                        'bbox': (bbox[0], bbox[1], bbox[2], bbox[3]),
+                        'confidence': face.det_score,
+                        'face': face_crop,          # Keep crop for UI
+                        'embedding': embedding,     # Add embedding for logic
+                        'center': ((bbox[0] + bbox[2]) // 2, (bbox[1] + bbox[3]) // 2)
+                    }
+                    detections.append(detection_dict)
 
         return detections, rgb_frame
 
@@ -141,15 +82,6 @@ class FaceDetector:
     ) -> np.ndarray:
         """
         Draw bounding boxes on frame.
-
-        Args:
-            frame: Input frame
-            detections: List of detection dictionaries
-            thickness: Line thickness
-            color: RGB color (B, G, R)
-
-        Returns:
-            Frame with drawn detections
         """
         annotated_frame = frame.copy()
 
@@ -166,31 +98,16 @@ class FaceDetector:
         return annotated_frame
 
     def release(self):
-        """Release MediaPipe resources."""
-        if self.detector and self.use_tasks_api:
-            try:
-                self.detector.close()
-            except:
-                pass  # Ignore errors during cleanup
+        """Cleanup resources."""
+        pass
 
     def __del__(self):
-        """Destructor to ensure resources are released."""
-        try:
-            self.release()
-        except:
-            pass
+        pass
 
 
 def resize_frame(frame: np.ndarray, max_width: int = 800) -> np.ndarray:
     """
     Resize frame for faster processing while maintaining aspect ratio.
-
-    Args:
-        frame: Input frame
-        max_width: Maximum width (default 800 for better face detail and accuracy)
-
-    Returns:
-        Resized frame
     """
     height, width = frame.shape[:2]
 

@@ -48,7 +48,7 @@ def main_registration():
         from modules.database import AttendanceDatabase
 
         db = AttendanceDatabase(db_path="data/attendance.db")
-        registration = LiveRegistration(num_captures=100)
+        registration = LiveRegistration(num_captures=100, capture_interval=0.2)
 
         print("\n" + "="*50)
         print("LIVE FACE REGISTRATION (CLI MODE)")
@@ -77,7 +77,7 @@ def main_recognition():
         from modules.database import AttendanceDatabase
 
         db = AttendanceDatabase(db_path="data/attendance.db")
-        attendance = RealtimeAttendance(confidence_threshold=0.45)
+        attendance = RealtimeAttendance(confidence_threshold=0.55)
 
         print("\n" + "="*50)
         print("REAL-TIME FACE RECOGNITION (CLI MODE)")
@@ -120,17 +120,17 @@ def main_cli():
 
         if choice == '1':
             from modules.registration import LiveRegistration
-            registration = LiveRegistration(num_captures=100)
+            registration = LiveRegistration(num_captures=100, capture_interval=0.2)
             success = registration.register_student_interactive(db)
             registration.release()
 
         elif choice == '2':
             from modules.attendance import RealtimeAttendance
-            threshold = input("Enter confidence threshold (default 0.45): ").strip()
+            threshold_str = input("Enter confidence threshold (default 0.55): ").strip()
             try:
-                threshold = float(threshold) if threshold else 0.45
+                threshold = float(threshold_str) if threshold_str else 0.55
             except ValueError:
-                threshold = 0.45
+                threshold = 0.55
             attendance = RealtimeAttendance(confidence_threshold=threshold)
             attendance.start_recognition(db, camera_id=0, timeout_seconds=600)
             attendance.release()
