@@ -19,15 +19,15 @@ class LiveRegistration:
 
     def __init__(
         self,
-        num_captures: int = 5,
+        num_captures: int = 100,
         capture_interval: float = 0.5,
-        min_face_area: int = 5000
+        min_face_area: int = 15000
     ):
         """
         Initialize registration system.
 
         Args:
-            num_captures: Number of face frames to capture (default 5)
+            num_captures: Number of face frames to capture (default 100)
             capture_interval: Time between captures in seconds
             min_face_area: Minimum face area in pixels (to ensure quality)
         """
@@ -36,12 +36,12 @@ class LiveRegistration:
         self.min_face_area = min_face_area
 
         self.detector = FaceDetector(min_detection_confidence=0.7)
-        self.recognizer = FaceRecognizer(model="hog", num_jitters=1)
+        self.recognizer = FaceRecognizer(model="hog", num_jitters=100)
 
     def capture_faces(
         self,
         camera_id: int = 0,
-        timeout: float = 60.0
+        timeout: float = 600.0
     ) -> Tuple[List[np.ndarray], bool]:
         """
         Capture multiple face frames from webcam.
@@ -74,8 +74,8 @@ class LiveRegistration:
                     print("Error reading frame")
                     break
 
-                # Resize for faster processing
-                frame = resize_frame(frame, max_width=640)
+                # Resize for faster processing, but preserve enough detail for accuracy
+                frame = resize_frame(frame, max_width=800)
 
                 # Detect faces
                 detections, _ = self.detector.detect_faces(frame)

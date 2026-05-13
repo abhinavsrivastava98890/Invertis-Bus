@@ -48,7 +48,7 @@ def main_registration():
         from modules.database import AttendanceDatabase
 
         db = AttendanceDatabase(db_path="data/attendance.db")
-        registration = LiveRegistration(num_captures=5)
+        registration = LiveRegistration(num_captures=100)
 
         print("\n" + "="*50)
         print("LIVE FACE REGISTRATION (CLI MODE)")
@@ -77,7 +77,7 @@ def main_recognition():
         from modules.database import AttendanceDatabase
 
         db = AttendanceDatabase(db_path="data/attendance.db")
-        attendance = RealtimeAttendance(confidence_threshold=0.6)
+        attendance = RealtimeAttendance(confidence_threshold=0.45)
 
         print("\n" + "="*50)
         print("REAL-TIME FACE RECOGNITION (CLI MODE)")
@@ -112,24 +112,25 @@ def main_cli():
         print("5. View Student")
         print("6. Update Fee Status")
         print("7. System Statistics")
-        print("8. Exit")
+        print("8. Delete Student")
+        print("9. Exit")
         print("\n" + "-"*50)
 
-        choice = input("Enter choice (1-8): ").strip()
+        choice = input("Enter choice (1-9): ").strip()
 
         if choice == '1':
             from modules.registration import LiveRegistration
-            registration = LiveRegistration(num_captures=5)
+            registration = LiveRegistration(num_captures=100)
             success = registration.register_student_interactive(db)
             registration.release()
 
         elif choice == '2':
             from modules.attendance import RealtimeAttendance
-            threshold = input("Enter confidence threshold (default 0.6): ").strip()
+            threshold = input("Enter confidence threshold (default 0.45): ").strip()
             try:
-                threshold = float(threshold) if threshold else 0.6
+                threshold = float(threshold) if threshold else 0.45
             except ValueError:
-                threshold = 0.6
+                threshold = 0.45
             attendance = RealtimeAttendance(confidence_threshold=threshold)
             attendance.start_recognition(db, camera_id=0, timeout_seconds=600)
             attendance.release()
@@ -174,6 +175,17 @@ def main_cli():
             print(f"  Today's Attendance: {stats.get('today_attendance', 0)}")
 
         elif choice == '8':
+            student_id = input("Enter student ID to delete: ").strip()
+            confirm = input(f"Are you sure you want to delete student {student_id} and all their face data? (y/n): ").strip().lower()
+            if confirm == 'y':
+                if db.delete_student(student_id):
+                    print(f"✓ Student {student_id} face data and records removed")
+                else:
+                    print("✗ Failed to remove student")
+            else:
+                print("Deletion cancelled")
+
+        elif choice == '9':
             print("Exiting...")
             break
 
