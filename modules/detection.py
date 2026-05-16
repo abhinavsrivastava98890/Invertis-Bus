@@ -132,7 +132,13 @@ class FaceDetector:
         if not self.use_tasks_api:
             # Fallback to Haar Cascade
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = self.detector.detectMultiScale(gray, 1.1, 4)
+            # Use stricter parameters to prevent false positives on random objects
+            faces = self.detector.detectMultiScale(
+                gray, 
+                scaleFactor=1.1, 
+                minNeighbors=9,    # Increased from 4 to 9 to strictly require more overlapping detections
+                minSize=(40, 40)   # Ignore tiny noise boxes
+            )
             
             for (x, y, w, h) in faces:
                 face_crop = frame[y:y+h, x:x+w].copy()
