@@ -264,9 +264,9 @@ class RealtimeAttendance:
                                 # Not yet verified as live, check for blink
                                 ear = self.recognizer.get_eye_aspect_ratio(face_image)
                                 if ear is not None:
-                                    if ear < 0.21:  # Threshold for closed eyes (stricter)
+                                    if ear < 0.23:  # Threshold for closed eyes (adjusted for better distance detection)
                                         self.liveness_state[student_id]['eyes_closed_frames'] += 1
-                                    elif ear >= 0.21 and self.liveness_state[student_id]['eyes_closed_frames'] >= 1:
+                                    elif ear >= 0.23 and self.liveness_state[student_id]['eyes_closed_frames'] >= 1:
                                         self.liveness_state[student_id]['blinked'] = True
                                         is_live = True
                                         

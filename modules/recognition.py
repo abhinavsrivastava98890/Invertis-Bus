@@ -121,6 +121,15 @@ class FaceRecognizer:
         """
         try:
             rgb_image = np.ascontiguousarray(face_image[:, :, ::-1])
+            
+            # Upscale image if it's too small to improve landmark precision for distant faces
+            h, w = rgb_image.shape[:2]
+            if h < 100 or w < 100:
+                scale = max(100/h, 100/w)
+                new_w, new_h = int(w * scale), int(h * scale)
+                import cv2
+                rgb_image = cv2.resize(rgb_image, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+                
             h, w = rgb_image.shape[:2]
             locations = [(0, w, h, 0)]
             
