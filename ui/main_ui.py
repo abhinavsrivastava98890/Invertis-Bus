@@ -28,7 +28,7 @@ class AttendanceSystemGUI:
         """
         self.root = root
         self.root.title("Bus Management - Face Recognition Attendance System")
-        self.root.geometry("800x600")
+        self.root.geometry("800x700")
         self.root.resizable(True, True)
 
         # Initialize components
@@ -467,7 +467,7 @@ class AttendanceSystemGUI:
         # Students display
         self.admin_text = scrolledtext.ScrolledText(
             students_frame,
-            height=15,
+            height=10,
             width=70,
             state=tk.DISABLED
         )
@@ -495,6 +495,17 @@ class AttendanceSystemGUI:
         )
         delete_btn.pack(side=tk.LEFT, padx=5)
 
+        # Danger Zone frame
+        danger_frame = ttk.LabelFrame(tab, text="Danger Zone", padding=15)
+        danger_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        wipe_btn = ttk.Button(
+            danger_frame,
+            text="Wipe Entire Database (Delete All Data)",
+            command=self.wipe_database_gui
+        )
+        wipe_btn.pack(pady=5)
+
         # Initial load
         self.view_all_students()
 
@@ -518,6 +529,26 @@ class AttendanceSystemGUI:
                 self.refresh_statistics()
             else:
                 messagebox.showerror("Error", f"Failed to delete student {student_id}. They may not exist.")
+
+    def wipe_database_gui(self):
+        """Handle wiping the entire database from the GUI."""
+        confirm1 = messagebox.askyesno(
+            "WARNING: Destructive Action",
+            "Are you absolutely sure you want to delete ALL students, faces, and attendance records?\n\nThis cannot be undone."
+        )
+        if confirm1:
+            confirm2 = messagebox.askyesno(
+                "Final Confirmation",
+                "Are you REALLY sure? Click Yes to wipe the entire database."
+            )
+            if confirm2:
+                if self.db.delete_all_data():
+                    messagebox.showinfo("Success", "Entire database has been wiped successfully.")
+                    log_message("Wiped entire database")
+                    self.view_all_students()
+                    self.refresh_statistics()
+                else:
+                    messagebox.showerror("Error", "Failed to wipe database.")
 
     def open_edit_student_dialog(self):
         """Open a dialog to edit student details."""

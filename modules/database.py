@@ -274,6 +274,24 @@ class AttendanceDatabase:
             print(f"Error deleting student: {e}")
             return False
 
+    def delete_all_data(self) -> bool:
+        """
+        Delete all students, embeddings, and attendance records from the database.
+
+        Returns:
+            True if successful
+        """
+        try:
+            self.cursor.execute("DELETE FROM attendance")
+            self.cursor.execute("DELETE FROM embeddings")
+            self.cursor.execute("DELETE FROM students")
+            self.conn.commit()
+            print("All data has been successfully wiped from the database.")
+            return True
+        except sqlite3.Error as e:
+            print(f"Error deleting all data: {e}")
+            return False
+
     # ==================== EMBEDDING OPERATIONS ====================
 
     def store_embedding(
