@@ -85,6 +85,19 @@ class AttendanceDatabase:
                 )
             """)
 
+            # Sync Queue table for cloud upload
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sync_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    image_path TEXT NOT NULL,
+                    person_type TEXT NOT NULL,
+                    metadata TEXT,
+                    status TEXT DEFAULT 'PENDING',
+                    retry_count INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Create indexes for faster queries
             self.cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_attendance_student 
@@ -97,6 +110,10 @@ class AttendanceDatabase:
             self.cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_embeddings_student 
                 ON embeddings(student_id)
+            """)
+            self.cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_sync_status 
+                ON sync_queue(status)
             """)
 
             self.conn.commit()
@@ -516,6 +533,58 @@ class AttendanceDatabase:
         except sqlite3.Error as e:
             print(f"Error retrieving statistics: {e}")
             return {}
+
+    # ==================== SYNC QUEUE OPERATIONS ====================
+
+    def add_to_sync_queue(self, image_path: str, person_type: str, metadata: dict) -> bool:
+        """Add a new incident to the sync queue."""
+        try:
+            self.cursor.execute("""
+                INSERT INTO sync_queue (image_path, person_type, metadata)
+                VALUES (?, ?, ?)
+            """, (image_path, person_type, json.dumps(metadata)))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error adding to sync queue: {e}")
+            return False
+
+    def get_pending_syncs(self, limit: int = 10) -> List[Dict]:
+        """Get pending items from the sync queue."""
+        try:
+            self.cursor.execute("""
+                SELECT * FROM sync_queue 
+                WHERE status = 'PENDING' 
+                ORDER BY created_at ASC LIMIT ?
+            """, (limit,))
+            return [dict(row) for row in self.cursor.fetchall()]
+        except sqlite3.Error as e:
+            print(f"Error getting pending syncs: {e}")
+            return []
+
+    def mark_sync_completed(self, queue_id: int) -> bool:
+        """Mark a queue item as SYNCED."""
+        try:
+            self.cursor.execute("""
+                UPDATE sync_queue SET status = 'SYNCED' WHERE id = ?
+            """, (queue_id,))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error marking sync completed: {e}")
+            return False
+
+    def increment_sync_retry(self, queue_id: int) -> bool:
+        """Increment retry count for a failed sync."""
+        try:
+            self.cursor.execute("""
+                UPDATE sync_queue SET retry_count = retry_count + 1 WHERE id = ?
+            """, (queue_id,))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error incrementing retry count: {e}")
+            return False
 
     # ==================== UTILITY OPERATIONS ====================
 

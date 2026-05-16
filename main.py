@@ -24,11 +24,18 @@ def main_gui():
     """Start the Tkinter GUI."""
     try:
         from ui.main_ui import AttendanceSystemGUI
+        from modules.sync_worker import SyncWorker
         import tkinter as tk
+
+        # Start background sync engine
+        sync_worker = SyncWorker()
+        sync_worker.start()
 
         root = tk.Tk()
         app = AttendanceSystemGUI(root)
         root.mainloop()
+
+        sync_worker.stop()
 
     except ImportError as e:
         print(f"Error importing GUI components: {e}")
@@ -75,9 +82,14 @@ def main_recognition():
     try:
         from modules.attendance import RealtimeAttendance
         from modules.database import AttendanceDatabase
+        from modules.sync_worker import SyncWorker
 
         db = AttendanceDatabase(db_path="data/attendance.db")
         attendance = RealtimeAttendance(confidence_threshold=0.45)
+
+        # Start background sync engine
+        sync_worker = SyncWorker()
+        sync_worker.start()
 
         print("\n" + "="*50)
         print("REAL-TIME FACE RECOGNITION (CLI MODE)")
@@ -85,6 +97,7 @@ def main_recognition():
 
         attendance.start_recognition(db, camera_id=0, timeout_seconds=600)
 
+        sync_worker.stop()
         db.close()
         attendance.release()
 
@@ -98,8 +111,13 @@ def main_cli():
     """Start interactive CLI menu."""
     from modules.database import AttendanceDatabase
     from modules.utils import format_attendance_report
+    from modules.sync_worker import SyncWorker
 
     db = AttendanceDatabase(db_path="data/attendance.db")
+    
+    # Start background sync engine
+    sync_worker = SyncWorker()
+    sync_worker.start()
 
     while True:
         print("\n" + "="*50)
@@ -192,6 +210,7 @@ def main_cli():
         else:
             print("Invalid choice")
 
+    sync_worker.stop()
     db.close()
 
 

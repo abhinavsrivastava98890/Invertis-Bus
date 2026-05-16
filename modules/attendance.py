@@ -42,6 +42,10 @@ class RealtimeAttendance:
         
         # State tracking for liveness (blink detection)
         self.liveness_state = {}
+        
+        # Cooldown tracking for cloud sync captures
+        self.last_unknown_capture = 0
+        self.last_unpaid_capture = {}
 
     def update_embeddings_cache(self, database) -> int:
         """
@@ -198,6 +202,21 @@ class RealtimeAttendance:
                                 status_text = "✗ UNPAID - FEES PENDING"
                                 text_color = (0, 0, 255)
 
+                                # Phase 3: Add to sync queue for Unpaid student
+                                current_time = time.time()
+                                if current_time - self.last_unpaid_capture.get(student_id, 0) > 60: # 1 minute cooldown
+                                    # Save full frame
+                                    img_filename = f"data/temp_unpaid_{student_id}_{int(current_time)}.jpg"
+                                    cv2.imwrite(img_filename, frame) 
+                                    metadata = {
+                                        "student_id": student_id,
+                                        "name": name,
+                                        "location": f"Camera {camera_id}",
+                                        "notes": "Unpaid student detected"
+                                    }
+                                    database.add_to_sync_queue(img_filename, "Unpaid", metadata)
+                                    self.last_unpaid_capture[student_id] = current_time
+
                             # Draw bounding box
                             cv2.rectangle(display_frame, (x_min, y_min), (x_max, y_max), color, 3)
 
@@ -311,6 +330,18 @@ class RealtimeAttendance:
                                 color,
                                 1
                             )
+
+                            # Phase 3: Add to sync queue for Unknown person
+                            current_time = time.time()
+                            if current_time - self.last_unknown_capture > 15:  # 15 seconds cooldown
+                                img_filename = f"data/temp_unknown_{int(current_time)}.jpg"
+                                cv2.imwrite(img_filename, frame) # saving the clean frame
+                                metadata = {
+                                    "location": f"Camera {camera_id}",
+                                    "notes": "Unknown person detected"
+                                }
+                                database.add_to_sync_queue(img_filename, "Unknown", metadata)
+                                self.last_unknown_capture = current_time
 
                 # Display statistics
                 cv2.putText(

@@ -81,3 +81,12 @@
 [2026-05-16 16:33:59] Application started
 [2026-05-16 16:34:27] Deleted student bcs2024488
 [2026-05-16 16:35:10] Recognition session ended
+[2026-05-17 02:47:13] Application started
+[2026-05-17 02:47:17] Application started
+[2026-05-17 02:48:00] Application started
+[2026-05-17 02:53:03] Application started
+[2026-05-17 03:09:32] Application started
+[2026-05-17 03:09:32] Recognition Error: No module named 'mediapipe'
+[2026-05-17 03:09:59] Application started
+[2026-05-17 03:10:09] Application started
+[2026-05-17 03:10:35] Application started
