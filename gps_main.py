@@ -213,9 +213,14 @@ def main():
             """, (lat, lon, gps_speed, accel_x, accel_y, accel_z, heading))
             conn.commit()
 
+            # Calculate GPS speed in km/h (1 knot = 1.852 km/h)
+            gps_speed_kmh = (gps_speed * 1.852) if gps_speed is not None else None
+            speed_str = f"{gps_speed_kmh:.1f} km/h" if gps_speed_kmh is not None else "N/A"
+
             # Print output for debugging
             print(f"Lat: {lat or 'N/A'}, Lon: {lon or 'N/A'} | "
-                  f"Accel X: {accel_x or 0:.2f}g | "
+                  f"Speed: {speed_str} | "
+                  f"G-Force: {accel_x or 0:.2f}g | "
                   f"Heading: {heading or 0:.0f}°")
 
             # Sleep to prevent spamming the database
