@@ -14,13 +14,23 @@ BAUD_RATE = 9600
 # I2C Addresses
 MPU6050_ADDR = 0x68
 HMC5883L_ADDR = 0x1E
+QMC5883L_ADDR = 0x0D
 
 # ==================== I2C HELPERS ====================
 
 def read_i2c_word(bus, addr, reg):
-    """Read a 16-bit word from an I2C device and handle 2's complement."""
+    """Read a 16-bit word from an I2C device (Big Endian) and handle 2's complement."""
     high = bus.read_byte_data(addr, reg)
     low = bus.read_byte_data(addr, reg+1)
+    value = (high << 8) + low
+    if value >= 0x8000:
+        return -((65535 - value) + 1)
+    return value
+
+def read_i2c_word_little_endian(bus, addr, reg):
+    """Read a 16-bit word from an I2C device (Little Endian)."""
+    low = bus.read_byte_data(addr, reg)
+    high = bus.read_byte_data(addr, reg+1)
     value = (high << 8) + low
     if value >= 0x8000:
         return -((65535 - value) + 1)
@@ -39,20 +49,27 @@ def init_mpu6050(bus):
         print(f"Failed to initialize MPU6050: {e}")
         return False
 
-def init_hmc5883l(bus):
-    """Initialize the HMC5883L Magnetometer."""
+def init_magnetometer(bus):
+    """Try initializing HMC5883L first, then fallback to the popular QMC5883L clone."""
     try:
-        # Write to Configuration Register A (8-average, 15 Hz default, normal measurement)
+        # Try Original HMC5883L (0x1E)
         bus.write_byte_data(HMC5883L_ADDR, 0x00, 0x70)
-        # Write to Configuration Register B (Gain)
         bus.write_byte_data(HMC5883L_ADDR, 0x01, 0xA0)
-        # Write to Mode Register (Continuous measurement mode)
         bus.write_byte_data(HMC5883L_ADDR, 0x02, 0x00)
-        print("HMC5883L Initialized.")
-        return True
+        print("HMC5883L Magnetometer Initialized.")
+        return "HMC"
+    except Exception:
+        pass
+
+    try:
+        # Try QMC5883L Clone (0x0D)
+        bus.write_byte_data(QMC5883L_ADDR, 0x0B, 0x01) # Set/Reset Period
+        bus.write_byte_data(QMC5883L_ADDR, 0x09, 0x1D) # Control Reg 1: Continuous, 200Hz, 8G
+        print("QMC5883L Magnetometer Initialized.")
+        return "QMC"
     except Exception as e:
-        print(f"Failed to initialize HMC5883L: {e}")
-        return False
+        print(f"Failed to initialize any Magnetometer: {e}")
+        return None
 
 # ==================== DATABASE SETUP ====================
 
@@ -91,12 +108,12 @@ def main():
     try:
         bus = SMBus(1)
         mpu_ready = init_mpu6050(bus)
-        hmc_ready = init_hmc5883l(bus)
+        mag_type = init_magnetometer(bus)
     except Exception as e:
         print(f"Critical I2C Bus Error: {e}. Check your wiring!")
         bus = None
         mpu_ready = False
-        hmc_ready = False
+        mag_type = None
 
     # 3. Initialize UART (GPS)
     try:
@@ -145,21 +162,27 @@ def main():
                 except Exception as e:
                     print(f"MPU6050 Read Error: {e}")
 
-            # --- READ HMC5883L ---
-            if hmc_ready:
+            # --- READ MAGNETOMETER ---
+            if mag_type == "HMC":
                 try:
-                    # Raw magnetic values
+                    # HMC is Big-Endian and registers are X=3, Z=5, Y=7
                     x = read_i2c_word(bus, HMC5883L_ADDR, 0x03)
                     z = read_i2c_word(bus, HMC5883L_ADDR, 0x05)
                     y = read_i2c_word(bus, HMC5883L_ADDR, 0x07)
-                    
-                    # Calculate Heading in degrees
-                    heading_rad = math.atan2(y, x)
-                    heading = math.degrees(heading_rad)
-                    if heading < 0:
-                        heading += 360
+                    heading = math.degrees(math.atan2(y, x))
+                    if heading < 0: heading += 360
                 except Exception as e:
                     print(f"HMC5883L Read Error: {e}")
+            elif mag_type == "QMC":
+                try:
+                    # QMC is Little-Endian and registers are X=0, Y=2, Z=4
+                    x = read_i2c_word_little_endian(bus, QMC5883L_ADDR, 0x00)
+                    y = read_i2c_word_little_endian(bus, QMC5883L_ADDR, 0x02)
+                    z = read_i2c_word_little_endian(bus, QMC5883L_ADDR, 0x04)
+                    heading = math.degrees(math.atan2(y, x))
+                    if heading < 0: heading += 360
+                except Exception as e:
+                    print(f"QMC5883L Read Error: {e}")
 
             # --- SAVE TO DATABASE ---
             cursor.execute("""
