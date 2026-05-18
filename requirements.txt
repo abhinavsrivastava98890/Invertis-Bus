@@ -21,3 +21,8 @@ psutil==5.9.5                      # System monitoring and information
 # black==23.7.0                    # Code formatter
 # pylint==2.17.5                   # Code linter
 # mypy==1.4.1                      # Type checker
+
+# Hardware Sensors (Raspberry Pi)
+pyserial>=3.5                      # UART communication for NEO-6M GPS
+pynmea2>=1.19.0                    # Parsing NMEA sentences from GPS
+smbus2>=0.4.3                      # I2C communication for MPU6050 & HMC5883L
