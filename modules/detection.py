@@ -136,8 +136,8 @@ class FaceDetector:
             faces = self.detector.detectMultiScale(
                 gray, 
                 scaleFactor=1.1, 
-                minNeighbors=9,    # Increased from 4 to 9 to strictly require more overlapping detections
-                minSize=(40, 40)   # Ignore tiny noise boxes
+                minNeighbors=12,   # Increased to 12 to require extremely strong face confidence
+                minSize=(80, 80)   # Increased to 80x80 to completely ignore small background objects
             )
             
             for (x, y, w, h) in faces:
