@@ -15,6 +15,7 @@ BAUD_RATE = 9600
 MPU6050_ADDR = 0x68
 HMC5883L_ADDR = 0x1E
 QMC5883L_ADDR = 0x0D
+QMC5883P_ADDR = 0x2C
 
 # ==================== I2C HELPERS ====================
 
@@ -50,7 +51,7 @@ def init_mpu6050(bus):
         return False
 
 def init_magnetometer(bus):
-    """Try initializing HMC5883L first, then fallback to the popular QMC5883L clone."""
+    """Try initializing HMC5883L, QMC5883L, and QMC5883P clones."""
     try:
         # Try Original HMC5883L (0x1E)
         bus.write_byte_data(HMC5883L_ADDR, 0x00, 0x70)
@@ -66,7 +67,17 @@ def init_magnetometer(bus):
         bus.write_byte_data(QMC5883L_ADDR, 0x0B, 0x01) # Set/Reset Period
         bus.write_byte_data(QMC5883L_ADDR, 0x09, 0x1D) # Control Reg 1: Continuous, 200Hz, 8G
         print("QMC5883L Magnetometer Initialized.")
-        return "QMC"
+        return "QMC_L"
+    except Exception:
+        pass
+        
+    try:
+        # Try QMC5883P Clone (0x2C)
+        bus.write_byte_data(QMC5883P_ADDR, 0x0B, 0x01) # Soft Reset
+        time.sleep(0.01)
+        bus.write_byte_data(QMC5883P_ADDR, 0x0A, 0x0D) # Control Reg 1: Continuous, 200Hz
+        print("QMC5883P Magnetometer Initialized (Found at 0x2C).")
+        return "QMC_P"
     except Exception as e:
         print(f"Failed to initialize any Magnetometer: {e}")
         return None
@@ -173,9 +184,9 @@ def main():
                     if heading < 0: heading += 360
                 except Exception as e:
                     print(f"HMC5883L Read Error: {e}")
-            elif mag_type == "QMC":
+            elif mag_type == "QMC_L":
                 try:
-                    # QMC is Little-Endian and registers are X=0, Y=2, Z=4
+                    # QMC5883L is Little-Endian and registers are X=0, Y=2, Z=4
                     x = read_i2c_word_little_endian(bus, QMC5883L_ADDR, 0x00)
                     y = read_i2c_word_little_endian(bus, QMC5883L_ADDR, 0x02)
                     z = read_i2c_word_little_endian(bus, QMC5883L_ADDR, 0x04)
@@ -183,6 +194,16 @@ def main():
                     if heading < 0: heading += 360
                 except Exception as e:
                     print(f"QMC5883L Read Error: {e}")
+            elif mag_type == "QMC_P":
+                try:
+                    # QMC5883P is Little-Endian and registers are X=1, Y=3, Z=5
+                    x = read_i2c_word_little_endian(bus, QMC5883P_ADDR, 0x01)
+                    y = read_i2c_word_little_endian(bus, QMC5883P_ADDR, 0x03)
+                    z = read_i2c_word_little_endian(bus, QMC5883P_ADDR, 0x05)
+                    heading = math.degrees(math.atan2(y, x))
+                    if heading < 0: heading += 360
+                except Exception as e:
+                    print(f"QMC5883P Read Error: {e}")
 
             # --- SAVE TO DATABASE ---
             cursor.execute("""
