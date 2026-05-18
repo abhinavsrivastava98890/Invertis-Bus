@@ -159,8 +159,10 @@ def main():
     print("\n--- ENTERING MAIN LOOP ---")
     print("Press Ctrl+C to exit.\n")
     
-    # Physics Integration Variables
+    # Physics and Timing Variables
     last_time = time.time()
+    last_db_time = time.time()
+    last_print_time = time.time()
     vel_x, vel_y, vel_z = 0.0, 0.0, 0.0
     
     try:
@@ -269,26 +271,32 @@ def main():
                 except Exception as e:
                     print(f"QMC5883P Read Error: {e}")
 
-            # --- SAVE TO DATABASE ---
-            cursor.execute("""
-                INSERT INTO sensor_data 
-                (latitude, longitude, gps_speed_knots, accel_x, accel_y, accel_z, heading_deg, mpu_speed_kmh)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (lat, lon, gps_speed, accel_x, accel_y, accel_z, heading, mpu_speed_kmh))
-            conn.commit()
+            # --- SAVE TO DATABASE (EVERY 10 SECONDS) ---
+            if current_time - last_db_time >= 10.0:
+                cursor.execute("""
+                    INSERT INTO sensor_data 
+                    (latitude, longitude, gps_speed_knots, accel_x, accel_y, accel_z, heading_deg, mpu_speed_kmh)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (lat, lon, gps_speed, accel_x, accel_y, accel_z, heading, mpu_speed_kmh))
+                conn.commit()
+                last_db_time = current_time
 
-            # Calculate GPS speed in km/h (1 knot = 1.852 km/h)
-            gps_speed_kmh = (gps_speed * 1.852) if gps_speed is not None else None
-            gps_speed_str = f"{gps_speed_kmh:.1f} km/h" if gps_speed_kmh is not None else "N/A"
+            # --- TERMINAL OUTPUT (EVERY 1 SECOND) ---
+            if current_time - last_print_time >= 1.0:
+                # Calculate GPS speed in km/h (1 knot = 1.852 km/h)
+                gps_speed_kmh = (gps_speed * 1.852) if gps_speed is not None else None
+                gps_speed_str = f"{gps_speed_kmh:.1f} km/h" if gps_speed_kmh is not None else "N/A"
 
-            # Print output for debugging
-            print(f"Lat: {lat or 'N/A'}, Lon: {lon or 'N/A'} | "
-                  f"GPS Speed: {gps_speed_str} | "
-                  f"MPU Speed: {mpu_speed_kmh:.1f} km/h | "
-                  f"Heading: {heading or 0:.0f}°")
+                # Print output for debugging
+                print(f"Lat: {lat or 'N/A'}, Lon: {lon or 'N/A'} | "
+                      f"GPS Speed: {gps_speed_str} | "
+                      f"MPU Speed: {mpu_speed_kmh:.1f} km/h | "
+                      f"Heading: {heading or 0:.0f}°")
+                last_print_time = current_time
 
-            # Sleep to prevent spamming the database
-            time.sleep(1)
+            # Sleep briefly for a fast polling loop (10Hz). 
+            # A fast loop is required so the MPU integration engine doesn't miss sudden accelerations!
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("\nExiting nicely...")
