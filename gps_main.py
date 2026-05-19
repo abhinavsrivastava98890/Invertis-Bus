@@ -132,6 +132,15 @@ def init_database():
 def main():
     print("Starting Sensor Tracking System...")
     
+    # Start Cloud Sync Worker in background
+    try:
+        from modules.sync_worker import SyncWorker
+        sync_worker = SyncWorker(interval=5.0)
+        sync_worker.start()
+        print("SyncWorker started for sensor data.")
+    except Exception as e:
+        print(f"Failed to start SyncWorker: {e}")
+    
     # 1. Initialize DB
     conn = init_database()
     cursor = conn.cursor()
@@ -279,6 +288,33 @@ def main():
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (lat, lon, gps_speed, accel_x, accel_y, accel_z, heading, mpu_speed_kmh))
                 conn.commit()
+                
+                # Also save to unified sync queue for cloud upload
+                try:
+                    import json
+                    from datetime import datetime
+                    sync_conn = sqlite3.connect("data/attendance.db")
+                    sync_cursor = sync_conn.cursor()
+                    payload = {
+                        "timestamp": datetime.now().isoformat(),
+                        "latitude": lat,
+                        "longitude": lon,
+                        "gps_speed_knots": gps_speed,
+                        "accel_x": accel_x,
+                        "accel_y": accel_y,
+                        "accel_z": accel_z,
+                        "heading_deg": heading,
+                        "mpu_speed_kmh": mpu_speed_kmh
+                    }
+                    sync_cursor.execute(
+                        "INSERT INTO sync_queue (data_type, payload) VALUES (?, ?)",
+                        ('sensor', json.dumps(payload))
+                    )
+                    sync_conn.commit()
+                    sync_conn.close()
+                except Exception as e:
+                    print(f"Failed to add sensor data to sync queue: {e}")
+                    
                 last_db_time = current_time
 
             # --- TERMINAL OUTPUT (EVERY 1 SECOND) ---

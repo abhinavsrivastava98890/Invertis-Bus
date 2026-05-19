@@ -99,6 +99,16 @@ class AttendanceDatabase:
                 ON embeddings(student_id)
             """)
 
+            # Sync Queue table for offline-first cloud upload
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sync_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    data_type TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             self.conn.commit()
             print("Database tables created/verified")
 
@@ -574,3 +584,78 @@ class AttendanceDatabase:
     def __del__(self):
         """Destructor to ensure connection is closed."""
         self.close()
+
+    # ==================== SYNC QUEUE OPERATIONS ====================
+
+    def add_to_sync_queue(self, data_type: str, payload: dict) -> bool:
+        """
+        Add an item to the sync queue.
+
+        Args:
+            data_type: Type of data ('encoding', 'attendance', 'sensor')
+            payload: Dictionary containing the data payload
+
+        Returns:
+            True if successful
+        """
+        try:
+            payload_str = json.dumps(payload)
+            self.cursor.execute("""
+                INSERT INTO sync_queue (data_type, payload)
+                VALUES (?, ?)
+            """, (data_type, payload_str))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error adding to sync queue: {e}")
+            return False
+
+    def get_pending_sync_items(self, limit: int = 50) -> List[Dict]:
+        """
+        Get pending items from the sync queue.
+
+        Args:
+            limit: Maximum items to retrieve
+
+        Returns:
+            List of dictionaries with id, data_type, payload, and created_at
+        """
+        try:
+            self.cursor.execute(
+                "SELECT * FROM sync_queue ORDER BY created_at ASC LIMIT ?",
+                (limit,)
+            )
+            rows = self.cursor.fetchall()
+            items = []
+            for row in rows:
+                item = dict(row)
+                try:
+                    item['payload'] = json.loads(item['payload'])
+                except Exception:
+                    pass # Keep as string if not JSON
+                items.append(item)
+            return items
+        except sqlite3.Error as e:
+            print(f"Error retrieving sync queue items: {e}")
+            return []
+
+    def delete_sync_item(self, item_id: int) -> bool:
+        """
+        Delete an item from the sync queue.
+
+        Args:
+            item_id: ID of the item to delete
+
+        Returns:
+            True if successful
+        """
+        try:
+            self.cursor.execute(
+                "DELETE FROM sync_queue WHERE id = ?",
+                (item_id,)
+            )
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error deleting sync queue item: {e}")
+            return False

@@ -264,6 +264,14 @@ Examples:
 
     # Log startup
     log_message("Application started")
+    
+    # Start Cloud Sync Worker in background
+    try:
+        from modules.sync_worker import SyncWorker
+        sync_worker = SyncWorker(interval=5.0)
+        sync_worker.start()
+    except Exception as e:
+        log_message(f"Failed to start SyncWorker: {e}")
 
     # Handle arguments
     if args.setup:
