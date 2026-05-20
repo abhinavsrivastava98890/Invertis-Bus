@@ -1,7 +1,38 @@
+# Virtual Environments
 venv/
+venv_win/
 .venv/
+env/
+.env_venv/
+
+# Environment Variables (Secrets)
+.env
+backend/.env
+
+# Local Databases and Data
 data/
+*.sqlite
+*.db
+
+# Logs and Exports
 logs/
+*.log
+*.csv
+attendance_export.csv
+
+# Temporary testing scripts
+force_sync.py
+
+# Python Cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# OS Files
 .DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/

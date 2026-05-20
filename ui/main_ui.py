@@ -247,9 +247,27 @@ class AttendanceSystemGUI:
                     embedding_str = encode_embedding(encoding)
                     if self.db.store_embedding(student_id, embedding_str, quality):
                         num_stored += 1
+                        
+                        # Add to sync queue
+                        self.db.add_to_sync_queue(
+                            data_type='encoding',
+                            payload={
+                                'student_id': student_id,
+                                'embedding': embedding_str,
+                                'quality_score': quality
+                            }
+                        )
 
                 avg_embedding_str = encode_embedding(avg_encoding)
-                self.db.store_embedding(student_id, avg_embedding_str, 1.0)
+                if self.db.store_embedding(student_id, avg_embedding_str, 1.0):
+                    self.db.add_to_sync_queue(
+                        data_type='encoding',
+                        payload={
+                            'student_id': student_id,
+                            'embedding': avg_embedding_str,
+                            'quality_score': 1.0
+                        }
+                    )
 
                 messagebox.showinfo(
                     "Success",
