@@ -113,10 +113,11 @@ def main_cli():
         print("6. Update Fee Status")
         print("7. System Statistics")
         print("8. Delete Student")
-        print("9. Exit")
+        print("9. Delete All Data (Wipe Database)")
+        print("10. Exit")
         print("\n" + "-"*50)
 
-        choice = input("Enter choice (1-9): ").strip()
+        choice = input("Enter choice (1-10): ").strip()
 
         if choice == '1':
             from modules.registration import LiveRegistration
@@ -186,6 +187,20 @@ def main_cli():
                 print("Deletion cancelled")
 
         elif choice == '9':
+            confirm = input("WARNING: Are you sure you want to delete ALL students, faces, and attendance records? This cannot be undone. (y/n): ").strip().lower()
+            if confirm == 'y':
+                double_confirm = input("Type 'YES' to confirm full database wipe: ").strip()
+                if double_confirm == 'YES':
+                    if db.delete_all_data():
+                        print("✓ Entire database wiped successfully.")
+                    else:
+                        print("✗ Failed to wipe database.")
+                else:
+                    print("Database wipe cancelled.")
+            else:
+                print("Database wipe cancelled.")
+
+        elif choice == '10':
             print("Exiting...")
             break
 
@@ -249,6 +264,14 @@ Examples:
 
     # Log startup
     log_message("Application started")
+    
+    # Start Cloud Sync Worker in background
+    try:
+        from modules.sync_worker import SyncWorker
+        sync_worker = SyncWorker(interval=5.0)
+        sync_worker.start()
+    except Exception as e:
+        log_message(f"Failed to start SyncWorker: {e}")
 
     # Handle arguments
     if args.setup:
