@@ -75,7 +75,7 @@ async def sync_attendance(payload: dict = Body(...)):
         # Send Webhook to Express Server (Web App) for live broadcast
         try:
             async with httpx.AsyncClient() as client:
-                await client.post("http://127.0.0.1:5000/api/internal/webhook", json={"type": "attendance", "data": payload})
+                await client.post("https://invertis-bus-saarthi-backend.onrender.com/api/internal/webhook", json={"type": "attendance", "data": payload})
         except Exception:
             pass # Ignore if Express is offline
         
@@ -94,7 +94,7 @@ async def sync_sensor(payload: dict = Body(...)):
         # 2. Send Webhook to Express Server (Web App) for live broadcast
         try:
             async with httpx.AsyncClient() as client:
-                await client.post("http://127.0.0.1:5000/api/internal/webhook", json={"type": "sensor", "data": payload})
+                await client.post("https://invertis-bus-saarthi-backend.onrender.com/api/internal/webhook", json={"type": "sensor", "data": payload})
         except Exception:
             pass # Ignore if Express is offline
             

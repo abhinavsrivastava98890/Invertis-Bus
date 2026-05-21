@@ -19,7 +19,7 @@ const Community = () => {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/grievances');
+        const response = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/grievances');
         if (response.data.status === 'success') {
           // If empty, put some mock data for demo purposes, else use real data
           setComplaints(response.data.data.length > 0 ? response.data.data : [
@@ -58,7 +58,7 @@ const Community = () => {
         time: 'Just now'
       };
 
-      const response = await axios.post('http://localhost:5000/api/grievance', payload);
+      const response = await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/grievance', payload);
       
       if (response.data.status === 'success') {
         // Add locally to feed immediately
@@ -75,7 +75,7 @@ const Community = () => {
 
   const handleUpvote = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/grievance/${id}/upvote`);
+      await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/grievance/${id}/upvote`);
       setComplaints(complaints.map(c => 
         c._id === id ? { ...c, upvotes: (c.upvotes || 0) + 1 } : c
       ));
@@ -87,7 +87,7 @@ const Community = () => {
   const handleResolve = async (id) => {
     if (!isAdmin) return;
     try {
-      await axios.put(`http://localhost:5000/api/grievance/${id}/resolve`);
+      await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/grievance/${id}/resolve`);
       setComplaints(complaints.map(c => 
         c._id === id ? { ...c, status: 'resolved' } : c
       ));
