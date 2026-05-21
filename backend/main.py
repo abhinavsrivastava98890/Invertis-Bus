@@ -62,15 +62,22 @@ async def sync_encoding(payload: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+import httpx
+
 @fastapi_app.post("/api/sync/attendance")
 async def sync_attendance(payload: dict = Body(...)):
     try:
-        # Save attendance record to MongoDB
         payload["synced_at"] = datetime.utcnow().isoformat()
+        
+        # Save attendance to MongoDB
         inserted_id = await database.save_attendance(payload)
         
-        # [NEW] Emit live attendance update to Admin Dashboard
-        await sio.emit("live_attendance", payload)
+        # Send Webhook to Express Server (Web App) for live broadcast
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.post("http://127.0.0.1:5000/api/internal/webhook", json={"type": "attendance", "data": payload})
+        except Exception:
+            pass # Ignore if Express is offline
         
         return {"status": "success", "id": inserted_id}
     except Exception as e:
@@ -84,11 +91,13 @@ async def sync_sensor(payload: dict = Body(...)):
         # 1. Save sensor data to MongoDB (Slow Lane)
         inserted_id = await database.save_sensor_data(payload)
         
-        # 2. Emit live telemetry to specific route room (Fast Lane)
-        route_id = payload.get("route_id", "4") # Default to 4 if not provided
-        room_name = f"route_{route_id}"
-        await sio.emit("live_telemetry", payload, room=room_name)
-        
+        # 2. Send Webhook to Express Server (Web App) for live broadcast
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.post("http://127.0.0.1:5000/api/internal/webhook", json={"type": "sensor", "data": payload})
+        except Exception:
+            pass # Ignore if Express is offline
+            
         return {"status": "success", "id": inserted_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
