@@ -23,6 +23,10 @@ uvicorn>=0.24.0
 motor>=3.3.1
 python-dotenv>=1.0.0
 pydantic>=2.4.2
+PyJWT>=2.8.0                     # For JWT Authentication
+python-socketio>=5.10.0          # For WebSockets (Real-time updates)
+httpx                            # For asynchronous HTTP webhooks
+
 
 # Optional: Development and Testing
 # pytest==7.4.0                  # Testing framework
