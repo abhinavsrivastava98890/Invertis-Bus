@@ -53,7 +53,7 @@ const Login = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center relative" style={{ backgroundColor: '#f4f7fb' }}>
+    <div className="min-h-screen flex items-center justify-center relative p-4" style={{ backgroundColor: '#f4f7fb', overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px',
         borderRadius: '50%', background: 'var(--primary-blue)', opacity: '0.1', filter: 'blur(40px)'

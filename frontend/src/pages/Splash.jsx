@@ -14,10 +14,10 @@ const Splash = () => {
   }, [navigate]);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-color" style={{
+    <div className="min-h-screen flex flex-col items-center justify-center bg-color p-4" style={{
       background: 'linear-gradient(135deg, var(--primary-blue), #003366)'
     }}>
-      <div className="animate-fade-in flex flex-col items-center">
+      <div className="animate-fade-in flex flex-col items-center text-center">
         <div style={{
           width: '120px',
           height: '120px',
