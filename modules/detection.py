@@ -4,11 +4,19 @@ Handles face detection from webcam frames and returns bounding boxes.
 """
 
 import cv2
-import mediapipe as mp
-from mediapipe.tasks.python import vision
 import numpy as np
 from typing import List, Tuple, Optional
 import os
+
+try:
+    import mediapipe as mp
+    from mediapipe.tasks.python import vision
+    MEDIAPIPE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Could not import MediaPipe ({e}).")
+    MEDIAPIPE_AVAILABLE = False
+    mp = None
+    vision = None
 
 
 class FaceDetector:
@@ -24,21 +32,28 @@ class FaceDetector:
         Args:
             min_detection_confidence: Minimum confidence threshold (0.0 to 1.0)
         """
-        try:
-            # Create FaceDetector using MediaPipe Tasks
-            base_options = mp.tasks.BaseOptions(
-                model_asset_path=self._get_model_path()
-            )
-            options = vision.FaceDetectorOptions(
-                base_options=base_options,
-                min_detection_confidence=min_detection_confidence
-            )
-            self.detector = vision.FaceDetector.create_from_options(options)
-            self.use_tasks_api = True
-        except Exception as e:
-            print(f"Warning: Could not load MediaPipe Tasks API: {e}")
-            print("Falling back to Haar Cascade...")
-            self.use_tasks_api = False
+        self.use_tasks_api = False
+        self.detector = None
+
+        if MEDIAPIPE_AVAILABLE:
+            try:
+                # Create FaceDetector using MediaPipe Tasks
+                base_options = mp.tasks.BaseOptions(
+                    model_asset_path=self._get_model_path()
+                )
+                options = vision.FaceDetectorOptions(
+                    base_options=base_options,
+                    min_detection_confidence=min_detection_confidence
+                )
+                self.detector = vision.FaceDetector.create_from_options(options)
+                self.use_tasks_api = True
+            except Exception as e:
+                print(f"Warning: Could not load MediaPipe Tasks API: {e}")
+                print("Falling back to Haar Cascade...")
+        else:
+            print("MediaPipe is unavailable. Falling back to Haar Cascade...")
+            
+        if not self.use_tasks_api:
             self.detector = cv2.CascadeClassifier(
                 cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
             )
@@ -117,7 +132,13 @@ class FaceDetector:
         if not self.use_tasks_api:
             # Fallback to Haar Cascade
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = self.detector.detectMultiScale(gray, 1.1, 4)
+            # Use stricter parameters to prevent false positives on random objects
+            faces = self.detector.detectMultiScale(
+                gray, 
+                scaleFactor=1.1, 
+                minNeighbors=9,    # Increased from 4 to 9 to strictly require more overlapping detections
+                minSize=(40, 40)   # Ignore tiny noise boxes
+            )
             
             for (x, y, w, h) in faces:
                 face_crop = frame[y:y+h, x:x+w].copy()

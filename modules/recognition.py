@@ -21,22 +21,30 @@ def _get_shape_predictor():
     """Load shape predictor (lazy load)."""
     global _SHAPE_PREDICTOR
     if _SHAPE_PREDICTOR is None:
-        model_path = "venv/lib/python3.12/site-packages/face_recognition_models/models/shape_predictor_68_face_landmarks.dat"
-        if os.path.exists(model_path):
-            _SHAPE_PREDICTOR = dlib.shape_predictor(model_path)
-        else:
-            print(f"Warning: Shape predictor not found at {model_path}")
+        try:
+            import face_recognition_models
+            model_path = face_recognition_models.pose_predictor_model_location()
+            if os.path.exists(model_path):
+                _SHAPE_PREDICTOR = dlib.shape_predictor(model_path)
+            else:
+                print(f"Warning: Shape predictor not found at {model_path}")
+        except ImportError:
+            print("Warning: face_recognition_models not installed")
     return _SHAPE_PREDICTOR
 
 def _get_recognizer():
     """Load recognizer model (lazy load)."""
     global _DLIB_RECOGNIZER
     if _DLIB_RECOGNIZER is None:
-        model_path = "venv/lib/python3.12/site-packages/face_recognition_models/models/dlib_face_recognition_resnet_model_v1.dat"
-        if os.path.exists(model_path):
-            _DLIB_RECOGNIZER = dlib.face_recognition_model_v1(model_path)
-        else:
-            print(f"Warning: Recognizer model not found at {model_path}")
+        try:
+            import face_recognition_models
+            model_path = face_recognition_models.face_recognition_model_location()
+            if os.path.exists(model_path):
+                _DLIB_RECOGNIZER = dlib.face_recognition_model_v1(model_path)
+            else:
+                print(f"Warning: Recognizer model not found at {model_path}")
+        except ImportError:
+            print("Warning: face_recognition_models not installed")
     return _DLIB_RECOGNIZER
 
 
@@ -113,6 +121,15 @@ class FaceRecognizer:
         """
         try:
             rgb_image = np.ascontiguousarray(face_image[:, :, ::-1])
+            
+            # Upscale image if it's too small to improve landmark precision for distant faces
+            h, w = rgb_image.shape[:2]
+            if h < 100 or w < 100:
+                scale = max(100/h, 100/w)
+                new_w, new_h = int(w * scale), int(h * scale)
+                import cv2
+                rgb_image = cv2.resize(rgb_image, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+                
             h, w = rgb_image.shape[:2]
             locations = [(0, w, h, 0)]
             

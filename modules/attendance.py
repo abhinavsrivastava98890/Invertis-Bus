@@ -42,6 +42,10 @@ class RealtimeAttendance:
         
         # State tracking for liveness (blink detection)
         self.liveness_state = {}
+        
+        # Cooldown tracking for cloud sync incidents (no images, just metadata)
+        self.last_unknown_capture = 0
+        self.last_unpaid_capture = {}
 
     def update_embeddings_cache(self, database) -> int:
         """
@@ -264,9 +268,9 @@ class RealtimeAttendance:
                                 # Not yet verified as live, check for blink
                                 ear = self.recognizer.get_eye_aspect_ratio(face_image)
                                 if ear is not None:
-                                    if ear < 0.21:  # Threshold for closed eyes (stricter)
+                                    if ear < 0.19:  # Strict threshold for fully closed eyes to prevent false positives
                                         self.liveness_state[student_id]['eyes_closed_frames'] += 1
-                                    elif ear >= 0.21 and self.liveness_state[student_id]['eyes_closed_frames'] >= 1:
+                                    elif ear >= 0.19 and self.liveness_state[student_id]['eyes_closed_frames'] >= 1:
                                         self.liveness_state[student_id]['blinked'] = True
                                         is_live = True
                                         
@@ -295,8 +299,37 @@ class RealtimeAttendance:
                                             confidence=confidence,
                                             device_id="webcam"
                                         )
+                                        
+                                        # Queue attendance for sync
+                                        from datetime import datetime
+                                        database.add_to_sync_queue(
+                                            data_type='attendance',
+                                            payload={
+                                                'student_id': student_id,
+                                                'name': name,
+                                                'fee_status': fee_status,
+                                                'confidence': float(confidence),
+                                                'check_in_time': datetime.now().isoformat(),
+                                                'device_id': "webcam"
+                                            }
+                                        )
+                                        
                                         recognized_faces[student_id] = current_time
                                         print(f"✓ Attendance logged: {name} ({student_id}) - {fee_status.upper()} (LIVE)")
+
+                                        # Queue unpaid incident (if applicable)
+                                        if fee_status == 'unpaid' and (current_time - self.last_unpaid_capture.get(student_id, 0) > 60):
+                                            database.add_to_sync_queue(
+                                                data_type='attendance',
+                                                payload={
+                                                    'person_type': 'Unpaid',
+                                                    'student_id': student_id,
+                                                    'name': name,
+                                                    'location': "Bus Camera",
+                                                    'check_in_time': datetime.now().isoformat()
+                                                }
+                                            )
+                                            self.last_unpaid_capture[student_id] = current_time
 
                         else:
                             # Face not recognized
@@ -311,6 +344,20 @@ class RealtimeAttendance:
                                 color,
                                 1
                             )
+                            
+                            # Queue unknown incident
+                            current_time = time.time()
+                            if current_time - getattr(self, 'last_unknown_capture', 0) > 15:
+                                from datetime import datetime
+                                database.add_to_sync_queue(
+                                    data_type='attendance',
+                                    payload={
+                                        'person_type': 'Unknown',
+                                        'location': "Bus Camera",
+                                        'check_in_time': datetime.now().isoformat()
+                                    }
+                                )
+                                self.last_unknown_capture = current_time
 
                 # Display statistics
                 cv2.putText(

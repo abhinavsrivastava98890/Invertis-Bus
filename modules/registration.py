@@ -322,10 +322,28 @@ class LiveRegistration:
             embedding_str = encode_embedding(encoding)
             if database.store_embedding(student_id, embedding_str, quality):
                 num_stored += 1
+                
+                # Add to sync queue
+                database.add_to_sync_queue(
+                    data_type='encoding',
+                    payload={
+                        'student_id': student_id,
+                        'embedding': embedding_str,
+                        'quality_score': quality
+                    }
+                )
 
         # Store averaged encoding with higher priority
         avg_embedding_str = encode_embedding(avg_encoding)
-        database.store_embedding(student_id, avg_embedding_str, 1.0)  # Quality 1.0 for average
+        if database.store_embedding(student_id, avg_embedding_str, 1.0):  # Quality 1.0 for average
+            database.add_to_sync_queue(
+                data_type='encoding',
+                payload={
+                    'student_id': student_id,
+                    'embedding': avg_embedding_str,
+                    'quality_score': 1.0
+                }
+            )
 
         print("\n" + "="*50)
         print("REGISTRATION SUCCESSFUL!")
