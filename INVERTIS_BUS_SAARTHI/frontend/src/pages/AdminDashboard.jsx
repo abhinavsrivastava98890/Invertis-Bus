@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import axios from 'axios';
+import { BACKEND_URL } from '../config';
 import '../index.css';
 
 // Fix for default marker icon in react-leaflet
@@ -70,7 +71,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     // Connect WebSockets
-    const socket = io('https://invertis-bus.onrender.com', {
+    const socket = io(BACKEND_URL, {
       transports: ['websocket', 'polling']
     });
 
@@ -129,7 +130,7 @@ const AdminDashboard = () => {
       setIsLoading(true);
       try {
         // Fetch routes globally for dropdowns
-        const rRes = await axios.get('https://invertis-bus.onrender.com/api/routes');
+        const rRes = await axios.get(`${BACKEND_URL}/api/routes`);
         if (rRes.data.status === 'success') {
           setRoutesList(rRes.data.data);
           if (rRes.data.data.length > 0 && selectedRoute === '1') {
@@ -138,15 +139,15 @@ const AdminDashboard = () => {
         }
 
         // Fetch grievances for stats regardless of tab
-        const gRes = await axios.get('https://invertis-bus.onrender.com/api/grievances');
+        const gRes = await axios.get(`${BACKEND_URL}/api/grievances`);
         if (gRes.data.status === 'success') setGrievances(gRes.data.data);
 
         // Fetch attendance logs
-        const attRes = await axios.get('https://invertis-bus.onrender.com/api/attendance');
+        const attRes = await axios.get(`${BACKEND_URL}/api/attendance`);
         if (attRes.data.status === 'success') setAttendanceLogs(attRes.data.data);
 
         // Fetch users globally for driver lookups and user management
-        const res = await axios.get('https://invertis-bus.onrender.com/api/users');
+        const res = await axios.get(`${BACKEND_URL}/api/users`);
         if (res.data.status === 'success') setUsersList(res.data.data);
       } catch (err) {
         console.error("Error fetching admin data", err);
@@ -165,7 +166,7 @@ const AdminDashboard = () => {
 
   const handleResolveGrievance = async (id) => {
     try {
-      await axios.put(`https://invertis-bus.onrender.com/api/grievance/${id}/resolve`);
+      await axios.put(`${BACKEND_URL}/api/grievance/${id}/resolve`);
       setGrievances(grievances.map(g => g._id === id ? { ...g, status: 'resolved' } : g));
       alert("Complaint marked as resolved!");
     } catch (err) {
@@ -176,7 +177,7 @@ const AdminDashboard = () => {
   const handleDeleteGrievance = async (id) => {
     if (!window.confirm("Are you sure you want to delete this grievance?")) return;
     try {
-      await axios.delete(`https://invertis-bus.onrender.com/api/grievance/${id}`);
+      await axios.delete(`${BACKEND_URL}/api/grievance/${id}`);
       setGrievances(grievances.filter(g => g._id !== id));
     } catch (err) {
       alert("Failed to delete complaint");
@@ -186,7 +187,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async (login_id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`https://invertis-bus.onrender.com/api/users/${login_id}`);
+      await axios.delete(`${BACKEND_URL}/api/users/${login_id}`);
       setUsersList(usersList.filter(u => u.login_id !== login_id));
       alert("User deleted successfully!");
     } catch (err) {
@@ -200,14 +201,14 @@ const AdminDashboard = () => {
       if (editingUser) {
         const payload = { ...userFormData };
         if (!payload.password) delete payload.password;
-        await axios.put(`https://invertis-bus.onrender.com/api/users/${editingUser.login_id}`, payload);
+        await axios.put(`${BACKEND_URL}/api/users/${editingUser.login_id}`, payload);
         alert("User updated successfully!");
       } else {
-        await axios.post('https://invertis-bus.onrender.com/api/users', userFormData);
+        await axios.post(`${BACKEND_URL}/api/users`, userFormData);
         alert("User created successfully!");
       }
       setShowUserModal(false);
-      const res = await axios.get('https://invertis-bus.onrender.com/api/users');
+      const res = await axios.get(`${BACKEND_URL}/api/users`);
       if (res.data.status === 'success') setUsersList(res.data.data);
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to save user");
@@ -229,7 +230,7 @@ const AdminDashboard = () => {
   const handleDeleteRoute = async (route_id) => {
     if (!window.confirm("Delete this route permanently?")) return;
     try {
-      await axios.delete(`https://invertis-bus.onrender.com/api/routes/${route_id}`);
+      await axios.delete(`${BACKEND_URL}/api/routes/${route_id}`);
       setRoutesList(routesList.filter(r => r.route_id !== route_id));
     } catch (err) {
       alert("Failed to delete route");
@@ -240,12 +241,12 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       if (editingRoute) {
-        await axios.put(`https://invertis-bus.onrender.com/api/routes/${editingRoute.route_id}`, routeFormData);
+        await axios.put(`${BACKEND_URL}/api/routes/${editingRoute.route_id}`, routeFormData);
       } else {
-        await axios.post('https://invertis-bus.onrender.com/api/routes', routeFormData);
+        await axios.post(`${BACKEND_URL}/api/routes`, routeFormData);
       }
       setShowRouteModal(false);
-      const res = await axios.get('https://invertis-bus.onrender.com/api/routes');
+      const res = await axios.get(`${BACKEND_URL}/api/routes`);
       if (res.data.status === 'success') setRoutesList(res.data.data);
     } catch (err) {
       alert(err.response?.data?.detail || err.message || "Failed to save route");
@@ -270,7 +271,7 @@ const AdminDashboard = () => {
 
     setIsBroadcasting(true);
     try {
-      await axios.post('https://invertis-bus.onrender.com/api/broadcast', {
+      await axios.post(`${BACKEND_URL}/api/broadcast`, {
         title: 'Admin Notice',
         message: broadcastMessage,
         sender: user?.name || 'Admin'

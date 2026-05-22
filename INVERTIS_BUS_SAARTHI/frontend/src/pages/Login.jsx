@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import '../index.css';
 
 import axios from 'axios';
+import { BACKEND_URL } from '../config';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const Login = () => {
     if (userId && password) {
       setIsLoading(true);
       try {
-        const response = await axios.post('https://invertis-bus.onrender.com/api/login', {
+        const response = await axios.post(`${BACKEND_URL}/api/login`, {
           login_id: userId,
           password: password
         });

@@ -7,6 +7,7 @@ import HamburgerMenu from '../components/HamburgerMenu';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
 import axios from 'axios';
+import { BACKEND_URL } from '../config';
 import '../index.css';
 
 // Fix for default marker icon in react-leaflet
@@ -57,7 +58,7 @@ const Home = () => {
     // Fetch Crowd Status
     const fetchCrowdStatus = async () => {
       try {
-        const res = await axios.get(`https://invertis-bus.onrender.com/api/route_status/${user?.route_id || '4'}`);
+        const res = await axios.get(`${BACKEND_URL}/api/route_status/${user?.route_id || '4'}`);
         if (res.data.status === 'success') {
           setCrowdStatus(res.data.data);
         }
@@ -68,7 +69,7 @@ const Home = () => {
     fetchCrowdStatus();
 
     // Connect to the FastAPI Socket.IO server
-    const socket = io('https://invertis-bus.onrender.com', {
+    const socket = io(BACKEND_URL, {
       transports: ['websocket', 'polling']
     });
 
@@ -118,7 +119,7 @@ const Home = () => {
   useEffect(() => {
     const fetchLatestBroadcast = async () => {
       try {
-        const res = await axios.get('https://invertis-bus.onrender.com/api/broadcast');
+        const res = await axios.get(`${BACKEND_URL}/api/broadcast`);
         if (res.data.status === 'success' && res.data.data) {
           const data = res.data.data;
           setLatestNotice(data);
@@ -145,15 +146,17 @@ const Home = () => {
   useEffect(() => {
     const fetchRouteInfo = async () => {
       try {
-        const res = await axios.get('https://invertis-bus.onrender.com/api/routes');
+        const res = await axios.get(`${BACKEND_URL}/api/routes`);
         if (res.data.status === 'success') {
-          const myRoute = res.data.data.find(r => String(r.route_id) === String(user?.route_id || '4'));
+          const fetchedRoutes = res.data.data || [];
+          const myRoute = fetchedRoutes.find(r => String(r.route_id) === String(user?.route_id || '4'));
           if (myRoute) {
             setRouteInfo(myRoute);
             // Fetch users to get driver name
-            const usersRes = await axios.get('https://invertis-bus.onrender.com/api/users');
+            const usersRes = await axios.get(`${BACKEND_URL}/api/users`);
             if (usersRes.data.status === 'success') {
-              const driver = usersRes.data.data.find(u => u.login_id === myRoute.driver_id);
+              const fetchedUsers = usersRes.data.data || [];
+              const driver = fetchedUsers.find(u => u.login_id === myRoute.driver_id);
               setDriverInfo(driver || { name: 'Unknown Driver', phone: '+919999999999' });
             }
           }
@@ -193,7 +196,7 @@ const Home = () => {
 
     sosTimeoutRef.current = setTimeout(async () => {
       try {
-        await axios.post('https://invertis-bus.onrender.com/api/sos', {
+        await axios.post(`${BACKEND_URL}/api/sos`, {
           student: user?.name || 'Student User',
           route: user?.route_id || '4',
           login_id: user?.login_id || user?.id || 'Unknown'
@@ -217,7 +220,7 @@ const Home = () => {
     if (sosActive) {
       if (!window.confirm("Do you want to cancel the active SOS alert?")) return;
       try {
-        await axios.post('https://invertis-bus.onrender.com/api/sos/cancel', {
+        await axios.post(`${BACKEND_URL}/api/sos/cancel`, {
           login_id: user?.login_id || user?.id || 'Unknown',
           route: user?.route_id || '4'
         });
@@ -234,7 +237,7 @@ const Home = () => {
 
   const handleNotBoarding = async () => {
     try {
-      const res = await axios.post('https://invertis-bus.onrender.com/api/leave', {
+      const res = await axios.post(`${BACKEND_URL}/api/leave`, {
         login_id: user?.id || 'Unknown',
         route: user?.route_id || '4'
       });
