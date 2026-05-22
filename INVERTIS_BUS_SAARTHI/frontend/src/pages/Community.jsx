@@ -12,14 +12,14 @@ const Community = () => {
   const [newComplaintText, setNewComplaintText] = useState('');
   const [complaints, setComplaints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const isAdmin = user?.role === 'admin';
 
   // Fetch complaints from backend
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const response = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/grievances');
+        const response = await axios.get('https://invertis-bus.onrender.com/api/grievances');
         if (response.data.status === 'success') {
           // If empty, put some mock data for demo purposes, else use real data
           setComplaints(response.data.data.length > 0 ? response.data.data : [
@@ -58,8 +58,8 @@ const Community = () => {
         time: 'Just now'
       };
 
-      const response = await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/grievance', payload);
-      
+      const response = await axios.post('https://invertis-bus.onrender.com/api/grievance', payload);
+
       if (response.data.status === 'success') {
         // Add locally to feed immediately
         const newComp = { ...payload, _id: response.data.id, upvotes: 0, status: 'pending' };
@@ -75,8 +75,8 @@ const Community = () => {
 
   const handleUpvote = async (id) => {
     try {
-      await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/grievance/${id}/upvote`);
-      setComplaints(complaints.map(c => 
+      await axios.put(`https://invertis-bus.onrender.com/api/grievance/${id}/upvote`);
+      setComplaints(complaints.map(c =>
         c._id === id ? { ...c, upvotes: (c.upvotes || 0) + 1 } : c
       ));
     } catch (err) {
@@ -87,8 +87,8 @@ const Community = () => {
   const handleResolve = async (id) => {
     if (!isAdmin) return;
     try {
-      await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/grievance/${id}/resolve`);
-      setComplaints(complaints.map(c => 
+      await axios.put(`https://invertis-bus.onrender.com/api/grievance/${id}/resolve`);
+      setComplaints(complaints.map(c =>
         c._id === id ? { ...c, status: 'resolved' } : c
       ));
     } catch (err) {
@@ -138,8 +138,8 @@ const Community = () => {
                   </p>
                 </div>
               </div>
-              
-              <span style={{ 
+
+              <span style={{
                 fontSize: '0.7rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '8px',
                 backgroundColor: comp.status === 'resolved' ? '#e6fae6' : '#fff1f0',
                 color: comp.status === 'resolved' ? '#28a745' : '#cf1322',
@@ -174,13 +174,13 @@ const Community = () => {
             {comp.type === 'audio' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '30px', marginTop: '0.5rem', border: '1px solid #e0e0e0' }}>
                 <button style={{ backgroundColor: 'var(--primary-blue)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                   <div style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '10px solid white', marginLeft: '3px' }}></div>
+                  <div style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '10px solid white', marginLeft: '3px' }}></div>
                 </button>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
-                   {/* Fake Audio Waveform */}
-                   {[...Array(25)].map((_, i) => (
-                     <div key={i} style={{ width: '4px', height: `${Math.random() * 20 + 8}px`, backgroundColor: i < 8 ? 'var(--primary-blue)' : '#cfd4da', borderRadius: '2px' }}></div>
-                   ))}
+                  {/* Fake Audio Waveform */}
+                  {[...Array(25)].map((_, i) => (
+                    <div key={i} style={{ width: '4px', height: `${Math.random() * 20 + 8}px`, backgroundColor: i < 8 ? 'var(--primary-blue)' : '#cfd4da', borderRadius: '2px' }}></div>
+                  ))}
                 </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 'bold' }}>0:12</span>
               </div>
@@ -188,16 +188,16 @@ const Community = () => {
 
             {/* Upvote & Action Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: '1rem', marginTop: '0.5rem' }}>
-              <button onClick={() => handleUpvote(comp._id)} style={{ 
-                display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', 
+              <button onClick={() => handleUpvote(comp._id)} style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none',
                 color: 'var(--primary-blue)', fontWeight: '600', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background-color 0.2s'
               }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e6f0fa'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                 <ThumbsUp size={18} /> {comp.upvotes || 0} Agree
               </button>
-              
+
               {isAdmin && comp.status === 'pending' && (
-                <button onClick={() => handleResolve(comp._id)} style={{ 
-                  backgroundColor: 'var(--secondary-orange)', color: 'white', border: 'none', 
+                <button onClick={() => handleResolve(comp._id)} style={{
+                  backgroundColor: 'var(--secondary-orange)', color: 'white', border: 'none',
                   padding: '0.4rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer'
                 }}>
                   Mark Resolved
@@ -210,7 +210,7 @@ const Community = () => {
 
       {/* Floating Action Button */}
       {!isAdmin && (
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           style={{
             position: 'absolute', bottom: '2rem', right: '2rem', width: '60px', height: '60px',
@@ -248,7 +248,7 @@ const Community = () => {
             </div>
 
             <form onSubmit={handlePostComplaint} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <textarea 
+              <textarea
                 value={newComplaintText}
                 onChange={(e) => setNewComplaintText(e.target.value)}
                 placeholder="What's the issue? (e.g. Bus is overcrowded, Rash driving...)"
@@ -259,7 +259,7 @@ const Community = () => {
                 }}
                 required
               />
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <button type="button" onClick={() => alert("Photo upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>

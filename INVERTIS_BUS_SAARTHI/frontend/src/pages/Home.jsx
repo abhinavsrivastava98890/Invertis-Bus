@@ -34,12 +34,12 @@ const Home = () => {
   const [alarmSet, setAlarmSet] = useState(false);
   const [sosActive, setSosActive] = useState(false);
   const [sosTimer, setSosTimer] = useState(null);
-  
+
   const sosTimeoutRef = useRef(null);
   const sosIntervalRef = useRef(null);
 
   const [crowdStatus, setCrowdStatus] = useState({ filled: 0, total: 50, status: 'Loading...' });
-  
+
   // Real Data State
   const [routeInfo, setRouteInfo] = useState(null);
   const [driverInfo, setDriverInfo] = useState(null);
@@ -57,7 +57,7 @@ const Home = () => {
     // Fetch Crowd Status
     const fetchCrowdStatus = async () => {
       try {
-        const res = await axios.get(`https://invertis-bus-saarthi-backend.onrender.com/api/route_status/${user?.route_id || '4'}`);
+        const res = await axios.get(`https://invertis-bus.onrender.com/api/route_status/${user?.route_id || '4'}`);
         if (res.data.status === 'success') {
           setCrowdStatus(res.data.data);
         }
@@ -68,7 +68,7 @@ const Home = () => {
     fetchCrowdStatus();
 
     // Connect to the FastAPI Socket.IO server
-    const socket = io('https://invertis-bus-saarthi-backend.onrender.com', {
+    const socket = io('https://invertis-bus.onrender.com', {
       transports: ['websocket', 'polling']
     });
 
@@ -99,13 +99,13 @@ const Home = () => {
         try {
           // Play notification sound
           new Audio('https://www.soundjay.com/buttons/beep-07.mp3').play();
-        } catch(e) {}
+        } catch (e) { }
       }
     });
 
     // Fallback: If no socket data arrives, slightly animate it (for testing only)
     const fallbackInterval = setInterval(() => {
-       setBusLocation(prev => [prev[0] + 0.00005, prev[1] + 0.00005]);
+      setBusLocation(prev => [prev[0] + 0.00005, prev[1] + 0.00005]);
     }, 5000);
 
     return () => {
@@ -118,7 +118,7 @@ const Home = () => {
   useEffect(() => {
     const fetchLatestBroadcast = async () => {
       try {
-        const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/broadcast');
+        const res = await axios.get('https://invertis-bus.onrender.com/api/broadcast');
         if (res.data.status === 'success' && res.data.data) {
           const data = res.data.data;
           setLatestNotice(data);
@@ -145,13 +145,13 @@ const Home = () => {
   useEffect(() => {
     const fetchRouteInfo = async () => {
       try {
-        const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/routes');
+        const res = await axios.get('https://invertis-bus.onrender.com/api/routes');
         if (res.data.status === 'success') {
           const myRoute = res.data.data.find(r => String(r.route_id) === String(user?.route_id || '4'));
           if (myRoute) {
             setRouteInfo(myRoute);
             // Fetch users to get driver name
-            const usersRes = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/users');
+            const usersRes = await axios.get('https://invertis-bus.onrender.com/api/users');
             if (usersRes.data.status === 'success') {
               const driver = usersRes.data.data.find(u => u.login_id === myRoute.driver_id);
               setDriverInfo(driver || { name: 'Unknown Driver', phone: '+919999999999' });
@@ -168,13 +168,13 @@ const Home = () => {
   // Handle fake alarm trigger logic for demonstration
   useEffect(() => {
     if (alarmSet && busLocation[0] !== 28.3180) {
-      const dist = Math.abs(busLocation[0] - 28.3500); 
+      const dist = Math.abs(busLocation[0] - 28.3500);
       if (dist < 0.005) {
-         alert("WAKE UP ALARM: Your bus is arriving soon!");
-         setAlarmSet(false);
-         try {
-           new Audio('https://www.soundjay.com/buttons/beep-07.mp3').play();
-         } catch(e){}
+        alert("WAKE UP ALARM: Your bus is arriving soon!");
+        setAlarmSet(false);
+        try {
+          new Audio('https://www.soundjay.com/buttons/beep-07.mp3').play();
+        } catch (e) { }
       }
     }
   }, [busLocation, alarmSet]);
@@ -193,7 +193,7 @@ const Home = () => {
 
     sosTimeoutRef.current = setTimeout(async () => {
       try {
-        await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/sos', {
+        await axios.post('https://invertis-bus.onrender.com/api/sos', {
           student: user?.name || 'Student User',
           route: user?.route_id || '4',
           login_id: user?.login_id || user?.id || 'Unknown'
@@ -217,7 +217,7 @@ const Home = () => {
     if (sosActive) {
       if (!window.confirm("Do you want to cancel the active SOS alert?")) return;
       try {
-        await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/sos/cancel', {
+        await axios.post('https://invertis-bus.onrender.com/api/sos/cancel', {
           login_id: user?.login_id || user?.id || 'Unknown',
           route: user?.route_id || '4'
         });
@@ -234,11 +234,11 @@ const Home = () => {
 
   const handleNotBoarding = async () => {
     try {
-      const res = await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/leave', {
+      const res = await axios.post('https://invertis-bus.onrender.com/api/leave', {
         login_id: user?.id || 'Unknown',
         route: user?.route_id || '4'
       });
-      
+
       if (res.data.action === 'marked') {
         setIsNotBoarding(true);
         alert("Leave Marked! The driver will not wait for you at your stop today.");
@@ -289,11 +289,11 @@ const Home = () => {
               <div className="glass animate-slide-up" style={{ position: 'absolute', top: '100%', right: 0, width: '250px', padding: '1rem', borderRadius: '12px', zIndex: 10, marginTop: '0.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                 <h4 style={{ margin: '0 0 0.5rem 0' }}>Notifications</h4>
                 {latestNotice ? (
-                   <div style={{ padding: '0.5rem', backgroundColor: '#e6f0fa', borderRadius: '8px', fontSize: '0.85rem' }}>
-                     <strong>{latestNotice.title || 'Admin'}:</strong> {latestNotice.message}
-                   </div>
+                  <div style={{ padding: '0.5rem', backgroundColor: '#e6f0fa', borderRadius: '8px', fontSize: '0.85rem' }}>
+                    <strong>{latestNotice.title || 'Admin'}:</strong> {latestNotice.message}
+                  </div>
                 ) : (
-                   <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)' }}>No new updates.</p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)' }}>No new updates.</p>
                 )}
               </div>
             )}
@@ -304,19 +304,19 @@ const Home = () => {
         </div>
       </header>
 
-      <main style={{ 
+      <main style={{
         flex: 1, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
         maxWidth: '1200px', margin: '0 auto', width: '100%',
         overflowY: 'auto'
       }}>
-        
+
         {/* Quick Actions Bar */}
         <div className="animate-slide-up" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', flexShrink: 0 }}>
-          <button 
+          <button
             onClick={handleSosClick}
             style={{
               flex: 1, minWidth: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              backgroundColor: sosTimer !== null ? '#faad14' : (sosActive ? '#fff1f0' : '#cf1322'), 
+              backgroundColor: sosTimer !== null ? '#faad14' : (sosActive ? '#fff1f0' : '#cf1322'),
               color: sosTimer !== null ? 'white' : (sosActive ? '#cf1322' : 'white'),
               padding: '1rem 0.25rem', borderRadius: '12px', border: sosActive ? '2px solid #cf1322' : 'none',
               fontWeight: 'bold', boxShadow: '0 4px 12px rgba(207, 19, 34, 0.3)', transition: 'all 0.2s',
@@ -326,15 +326,15 @@ const Home = () => {
             <AlertOctagon size={16} />
             {sosTimer !== null ? `CANCEL (${sosTimer}s)` : (sosActive ? 'CANCEL SOS' : 'EMERGENCY')}
           </button>
-          
-          <button 
+
+          <button
             onClick={() => {
               setAlarmSet(!alarmSet);
               if (!alarmSet) alert("Wake Me Up Alarm Set! We'll alert you 2km before your stop.");
             }}
             style={{
               flex: 1, minWidth: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              backgroundColor: alarmSet ? '#e6f0fa' : 'var(--white)', 
+              backgroundColor: alarmSet ? '#e6f0fa' : 'var(--white)',
               color: alarmSet ? 'var(--primary-blue)' : 'var(--text-dark)',
               padding: '1rem 0.25rem', borderRadius: '12px', border: alarmSet ? '2px solid var(--primary-blue)' : '2px solid transparent',
               fontWeight: '600', boxShadow: 'var(--shadow)', transition: 'all 0.2s', cursor: 'pointer', fontSize: '0.85rem'
@@ -344,11 +344,11 @@ const Home = () => {
             {alarmSet ? 'Alarm ON' : 'Wake Alarm'}
           </button>
 
-          <button 
+          <button
             onClick={handleNotBoarding}
             style={{
               flex: 1, minWidth: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              backgroundColor: isNotBoarding ? '#f8f9fa' : 'var(--white)', 
+              backgroundColor: isNotBoarding ? '#f8f9fa' : 'var(--white)',
               color: isNotBoarding ? 'var(--text-light)' : 'var(--text-dark)',
               padding: '1rem 0.25rem', borderRadius: '12px', border: isNotBoarding ? '2px solid #e0e0e0' : '2px solid transparent',
               fontWeight: '600', boxShadow: 'var(--shadow)', transition: 'all 0.2s', cursor: 'pointer', fontSize: '0.85rem'
@@ -359,19 +359,19 @@ const Home = () => {
           </button>
         </div>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
-          gap: '1.5rem', 
-          height: '100%' 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '1.5rem',
+          height: '100%'
         }}>
-          
+
           {/* Left Column: Info & Telemetry */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
+
             {/* Bus Info Card */}
             <div className="glass animate-slide-up" style={{
-              padding: '1.5rem', borderRadius: '20px', 
+              padding: '1.5rem', borderRadius: '20px',
               display: 'flex', flexDirection: 'column', gap: '1.25rem'
             }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-blue)', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -395,7 +395,7 @@ const Home = () => {
                 </div>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-light)' }}>{crowdStatus.filled}/{crowdStatus.total} seats filled. {crowdStatus.status === 'High' ? 'Likely standing only.' : 'Seats available.'}</p>
               </div>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ backgroundColor: '#e6f0fa', padding: '0.6rem', borderRadius: '10px', color: 'var(--primary-blue)' }}>
@@ -424,7 +424,7 @@ const Home = () => {
 
             {/* Live Telemetry Card */}
             <div className="glass animate-slide-up" style={{
-              padding: '1.5rem', borderRadius: '20px', 
+              padding: '1.5rem', borderRadius: '20px',
               display: 'flex', flexDirection: 'column', gap: '1.25rem',
               animationDelay: '0.1s'
             }}>
@@ -434,7 +434,7 @@ const Home = () => {
                   <span style={{ width: '6px', height: '6px', backgroundColor: '#28a745', borderRadius: '50%', display: 'inline-block', animation: 'pulse 1.5s infinite' }}></span> Live
                 </span>
               </h2>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
@@ -451,9 +451,9 @@ const Home = () => {
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Navigation size={18} style={{ transform: `rotate(${telemetry.heading}deg)`, transition: 'transform 0.5s ease' }} color="var(--text-dark)" />
-                    {telemetry.heading > 315 || telemetry.heading <= 45 ? 'North' : 
-                     telemetry.heading > 45 && telemetry.heading <= 135 ? 'East' : 
-                     telemetry.heading > 135 && telemetry.heading <= 225 ? 'South' : 'West'}
+                    {telemetry.heading > 315 || telemetry.heading <= 45 ? 'North' :
+                      telemetry.heading > 45 && telemetry.heading <= 135 ? 'East' :
+                        telemetry.heading > 135 && telemetry.heading <= 225 ? 'South' : 'West'}
                   </div>
                 </div>
 
@@ -469,7 +469,7 @@ const Home = () => {
             </div>
 
             {!showMap && (
-              <button 
+              <button
                 className="btn btn-secondary animate-slide-up"
                 onClick={() => setShowMap(true)}
                 style={{
@@ -483,30 +483,31 @@ const Home = () => {
 
             {/* Route ETA Timeline */}
             <div className="glass animate-slide-up" style={{
-              padding: '1.5rem', borderRadius: '20px', 
+              padding: '1.5rem', borderRadius: '20px',
               display: 'flex', flexDirection: 'column', gap: '1rem',
               animationDelay: '0.3s'
             }}>
               <h2 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-dark)', margin: 0 }}>Upcoming Stops</h2>
               <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                 <div style={{ position: 'absolute', left: '6px', top: '10px', bottom: '20px', width: '2px', backgroundColor: '#e0e0e0', zIndex: 0 }}></div>
-                
+
                 {(routeInfo?.stops ? routeInfo.stops.split(',').map(s => s.trim()) : ['Civil Lines (Your Stop)', 'Rajendra Nagar', 'DD Puram', 'Invertis University']).map((stop, idx, arr) => {
                   const isActive = idx === 0;
                   let eta = isActive ? 'Arriving soon' : `${(idx * 5) + 5} mins`;
                   if (idx === arr.length - 1) eta = `${(idx * 5) + 5} mins (Destination)`;
 
                   return (
-                  <div key={idx} style={{ position: 'relative', paddingBottom: '1.25rem', zIndex: 1 }}>
-                    <div style={{ 
-                      position: 'absolute', left: '-1.5rem', top: '2px', width: '14px', height: '14px', 
-                      borderRadius: '50%', backgroundColor: isActive ? 'var(--secondary-orange)' : '#e0e0e0',
-                      border: '3px solid white', boxShadow: '0 0 0 1px #e0e0e0'
-                    }}></div>
-                    <p style={{ margin: 0, fontWeight: '600', color: isActive ? 'var(--primary-blue)' : 'var(--text-dark)', fontSize: '0.95rem' }}>{stop}</p>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: isActive ? 'var(--secondary-orange)' : 'var(--text-light)', fontWeight: isActive ? 'bold' : 'normal', marginTop: '0.25rem' }}>{eta}</p>
-                  </div>
-                )})}
+                    <div key={idx} style={{ position: 'relative', paddingBottom: '1.25rem', zIndex: 1 }}>
+                      <div style={{
+                        position: 'absolute', left: '-1.5rem', top: '2px', width: '14px', height: '14px',
+                        borderRadius: '50%', backgroundColor: isActive ? 'var(--secondary-orange)' : '#e0e0e0',
+                        border: '3px solid white', boxShadow: '0 0 0 1px #e0e0e0'
+                      }}></div>
+                      <p style={{ margin: 0, fontWeight: '600', color: isActive ? 'var(--primary-blue)' : 'var(--text-dark)', fontSize: '0.95rem' }}>{stop}</p>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: isActive ? 'var(--secondary-orange)' : 'var(--text-light)', fontWeight: isActive ? 'bold' : 'normal', marginTop: '0.25rem' }}>{eta}</p>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -523,7 +524,7 @@ const Home = () => {
                 <h3 style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
                   <MapPin size={18} /> GPS Tracking: <span style={{ color: '#ffd0b0' }}>2 mins away</span>
                 </h3>
-                <button 
+                <button
                   onClick={() => setIsMapExpanded(true)}
                   style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '0.25rem' }}
                   title="Expand Map"
@@ -531,7 +532,7 @@ const Home = () => {
                   <Maximize2 size={20} />
                 </button>
               </div>
-              
+
               <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
                 <MapContainer center={busLocation} zoom={14} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
@@ -541,7 +542,7 @@ const Home = () => {
                   {/* Bus Marker */}
                   <Marker position={busLocation} icon={busIcon}>
                     <Popup>
-                      <b>Bus UP 25 AB 1234</b><br/>
+                      <b>Bus UP 25 AB 1234</b><br />
                       Speed: {telemetry.speed.toFixed(0)} km/h
                     </Popup>
                   </Marker>
@@ -579,7 +580,7 @@ const Home = () => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               <Marker position={busLocation} icon={busIcon}>
-                <Popup><b>Bus UP 25 AB 1234</b><br/>Speed: {telemetry.speed.toFixed(0)} km/h</Popup>
+                <Popup><b>Bus UP 25 AB 1234</b><br />Speed: {telemetry.speed.toFixed(0)} km/h</Popup>
               </Marker>
               <Polyline positions={routePolyline} color="var(--primary-blue)" weight={5} />
               <Marker position={routePolyline[3]}>
@@ -610,7 +611,7 @@ const Home = () => {
             <p style={{ color: 'var(--text-light)', fontSize: '0.8rem', margin: '0 0 1.5rem 0' }}>
               Sent by: {activeBroadcast.sender} • {new Date(activeBroadcast.timestamp).toLocaleTimeString()}
             </p>
-            <button 
+            <button
               onClick={acknowledgeBroadcast}
               style={{
                 backgroundColor: 'var(--primary-blue)', color: 'white', border: 'none', padding: '1rem 2rem',

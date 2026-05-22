@@ -19,7 +19,7 @@ const Login = () => {
     if (userId && password) {
       setIsLoading(true);
       try {
-        const response = await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/login', {
+        const response = await axios.post('https://invertis-bus.onrender.com/api/login', {
           login_id: userId,
           password: password
         });
@@ -32,9 +32,9 @@ const Login = () => {
             route_id: response.data.user.route_id,
             token: response.data.token
           };
-          
+
           login(userData);
-          
+
           if (userData.role === 'admin') {
             navigate('/admin-dashboard', { replace: true });
           } else if (userData.role === 'driver') {
@@ -69,7 +69,7 @@ const Login = () => {
       }}>
         <div className="flex flex-col items-center mb-6">
           <div style={{
-            background: loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)', 
+            background: loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)',
             padding: '1rem',
             borderRadius: '16px', marginBottom: '1rem',
             transition: 'background-color 0.3s'
@@ -85,12 +85,12 @@ const Login = () => {
           display: 'flex', backgroundColor: '#e9ecef', borderRadius: '12px', padding: '4px', marginBottom: '2rem'
         }}>
           {['student', 'driver', 'admin'].map((type) => (
-            <button 
+            <button
               key={type}
               type="button"
               onClick={() => { setLoginType(type); setUserId(''); setPassword(''); }}
               style={{
-                flex: 1, padding: '0.75rem 0.25rem', borderRadius: '10px', border: 'none', 
+                flex: 1, padding: '0.75rem 0.25rem', borderRadius: '10px', border: 'none',
                 backgroundColor: loginType === type ? 'white' : 'transparent',
                 color: loginType === type ? (type === 'admin' ? 'var(--secondary-orange)' : type === 'driver' ? '#28a745' : 'var(--primary-blue)') : 'var(--text-light)',
                 fontWeight: loginType === type ? '600' : '500',
@@ -112,8 +112,8 @@ const Login = () => {
               <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}>
                 <User size={18} />
               </div>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder={`Enter ${loginType} ID`}
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
@@ -133,9 +133,9 @@ const Login = () => {
               <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}>
                 <Lock size={18} />
               </div>
-              <input 
-                type="password" 
-                placeholder="Enter password" 
+              <input
+                type="password"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

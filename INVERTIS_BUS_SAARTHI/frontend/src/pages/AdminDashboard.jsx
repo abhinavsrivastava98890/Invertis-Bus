@@ -27,7 +27,7 @@ const busIcon = new L.Icon({
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  
+
   // State for Navigation
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, grievances
 
@@ -49,7 +49,7 @@ const AdminDashboard = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [userFormData, setUserFormData] = useState({ name: '', login_id: '', password: '', role: 'student', route_id: '1', fee_status: 'paid', phone: '' });
   const [userFilter, setUserFilter] = useState('student');
-  
+
   // Specific Route Complaints Modal
   const [showRouteComplaintsModal, setShowRouteComplaintsModal] = useState(false);
 
@@ -70,7 +70,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     // Connect WebSockets
-    const socket = io('https://invertis-bus-saarthi-backend.onrender.com', {
+    const socket = io('https://invertis-bus.onrender.com', {
       transports: ['websocket', 'polling']
     });
 
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
         time: new Date().toLocaleTimeString()
       };
       setSosAlerts(prev => [newAlert, ...prev]);
-      try { new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play(); } catch (e) {}
+      try { new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play(); } catch (e) { }
     });
 
     socket.on('sos_cancelled', (data) => {
@@ -129,24 +129,24 @@ const AdminDashboard = () => {
       setIsLoading(true);
       try {
         // Fetch routes globally for dropdowns
-        const rRes = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/routes');
+        const rRes = await axios.get('https://invertis-bus.onrender.com/api/routes');
         if (rRes.data.status === 'success') {
-           setRoutesList(rRes.data.data);
-           if (rRes.data.data.length > 0 && selectedRoute === '1') {
-             setSelectedRoute(rRes.data.data[0].route_id);
-           }
+          setRoutesList(rRes.data.data);
+          if (rRes.data.data.length > 0 && selectedRoute === '1') {
+            setSelectedRoute(rRes.data.data[0].route_id);
+          }
         }
 
         // Fetch grievances for stats regardless of tab
-        const gRes = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/grievances');
+        const gRes = await axios.get('https://invertis-bus.onrender.com/api/grievances');
         if (gRes.data.status === 'success') setGrievances(gRes.data.data);
 
         // Fetch attendance logs
-        const attRes = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/attendance');
+        const attRes = await axios.get('https://invertis-bus.onrender.com/api/attendance');
         if (attRes.data.status === 'success') setAttendanceLogs(attRes.data.data);
 
         // Fetch users globally for driver lookups and user management
-        const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/users');
+        const res = await axios.get('https://invertis-bus.onrender.com/api/users');
         if (res.data.status === 'success') setUsersList(res.data.data);
       } catch (err) {
         console.error("Error fetching admin data", err);
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [activeTab]);
 
@@ -165,7 +165,7 @@ const AdminDashboard = () => {
 
   const handleResolveGrievance = async (id) => {
     try {
-      await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/grievance/${id}/resolve`);
+      await axios.put(`https://invertis-bus.onrender.com/api/grievance/${id}/resolve`);
       setGrievances(grievances.map(g => g._id === id ? { ...g, status: 'resolved' } : g));
       alert("Complaint marked as resolved!");
     } catch (err) {
@@ -174,9 +174,9 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteGrievance = async (id) => {
-    if(!window.confirm("Are you sure you want to delete this grievance?")) return;
+    if (!window.confirm("Are you sure you want to delete this grievance?")) return;
     try {
-      await axios.delete(`https://invertis-bus-saarthi-backend.onrender.com/api/grievance/${id}`);
+      await axios.delete(`https://invertis-bus.onrender.com/api/grievance/${id}`);
       setGrievances(grievances.filter(g => g._id !== id));
     } catch (err) {
       alert("Failed to delete complaint");
@@ -184,9 +184,9 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteUser = async (login_id) => {
-    if(!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`https://invertis-bus-saarthi-backend.onrender.com/api/users/${login_id}`);
+      await axios.delete(`https://invertis-bus.onrender.com/api/users/${login_id}`);
       setUsersList(usersList.filter(u => u.login_id !== login_id));
       alert("User deleted successfully!");
     } catch (err) {
@@ -200,14 +200,14 @@ const AdminDashboard = () => {
       if (editingUser) {
         const payload = { ...userFormData };
         if (!payload.password) delete payload.password;
-        await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/users/${editingUser.login_id}`, payload);
+        await axios.put(`https://invertis-bus.onrender.com/api/users/${editingUser.login_id}`, payload);
         alert("User updated successfully!");
       } else {
-        await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/users', userFormData);
+        await axios.post('https://invertis-bus.onrender.com/api/users', userFormData);
         alert("User created successfully!");
       }
       setShowUserModal(false);
-      const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/users');
+      const res = await axios.get('https://invertis-bus.onrender.com/api/users');
       if (res.data.status === 'success') setUsersList(res.data.data);
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to save user");
@@ -227,9 +227,9 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteRoute = async (route_id) => {
-    if(!window.confirm("Delete this route permanently?")) return;
+    if (!window.confirm("Delete this route permanently?")) return;
     try {
-      await axios.delete(`https://invertis-bus-saarthi-backend.onrender.com/api/routes/${route_id}`);
+      await axios.delete(`https://invertis-bus.onrender.com/api/routes/${route_id}`);
       setRoutesList(routesList.filter(r => r.route_id !== route_id));
     } catch (err) {
       alert("Failed to delete route");
@@ -240,12 +240,12 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       if (editingRoute) {
-        await axios.put(`https://invertis-bus-saarthi-backend.onrender.com/api/routes/${editingRoute.route_id}`, routeFormData);
+        await axios.put(`https://invertis-bus.onrender.com/api/routes/${editingRoute.route_id}`, routeFormData);
       } else {
-        await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/routes', routeFormData);
+        await axios.post('https://invertis-bus.onrender.com/api/routes', routeFormData);
       }
       setShowRouteModal(false);
-      const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/routes');
+      const res = await axios.get('https://invertis-bus.onrender.com/api/routes');
       if (res.data.status === 'success') setRoutesList(res.data.data);
     } catch (err) {
       alert(err.response?.data?.detail || err.message || "Failed to save route");
@@ -267,10 +267,10 @@ const AdminDashboard = () => {
   const handleSendBroadcast = async (e) => {
     e.preventDefault();
     if (!broadcastMessage.trim()) return;
-    
+
     setIsBroadcasting(true);
     try {
-      await axios.post('https://invertis-bus-saarthi-backend.onrender.com/api/broadcast', {
+      await axios.post('https://invertis-bus.onrender.com/api/broadcast', {
         title: 'Admin Notice',
         message: broadcastMessage,
         sender: user?.name || 'Admin'
@@ -302,7 +302,7 @@ const AdminDashboard = () => {
             <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '500' }}>Welcome, {user?.name}</p>
           </div>
         </div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', position: 'relative' }}>
             <Bell size={24} />
@@ -349,7 +349,7 @@ const AdminDashboard = () => {
 
       {/* Main Content Area */}
       <main style={{ flex: 1, padding: '2rem', overflowY: 'auto', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-        
+
         {/* SOS Alerts View (Global) */}
         {sosAlerts.length > 0 && (
           <div className="animate-slide-up" style={{
@@ -378,13 +378,13 @@ const AdminDashboard = () => {
         {/* ----------------- TAB: OVERVIEW ----------------- */}
         {activeTab === 'overview' && (
           <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', margin: 0 }}>Live Fleet Tracking</h2>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <span style={{ fontWeight: '600', color: 'var(--text-light)' }}>Select Bus: </span>
-                <select 
-                  value={selectedRoute} 
+                <select
+                  value={selectedRoute}
                   onChange={(e) => setSelectedRoute(e.target.value)}
                   style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '2px solid var(--primary-blue)', fontWeight: 'bold', outline: 'none', cursor: 'pointer' }}
                 >
@@ -406,10 +406,10 @@ const AdminDashboard = () => {
                 <p style={{ margin: 0, fontSize: '0.9rem', color: '#155724' }}>Send an instant push notification to all student apps.</p>
               </div>
               <form onSubmit={handleSendBroadcast} style={{ flex: '2 1 300px', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
-                  placeholder="E.g. Bus Route 4 will be delayed by 15 mins today..." 
+                  placeholder="E.g. Bus Route 4 will be delayed by 15 mins today..."
                   value={broadcastMessage}
                   onChange={(e) => setBroadcastMessage(e.target.value)}
                   style={{ flex: 1, minWidth: '200px', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #28a745', fontSize: '1rem' }}
@@ -421,7 +421,7 @@ const AdminDashboard = () => {
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'stretch' }}>
-              
+
               {/* Left side: Map */}
               <div className="glass" style={{ flex: '2 1 400px', borderRadius: '20px', overflow: 'hidden', minHeight: '400px', border: '2px solid var(--primary-blue)', position: 'relative', zIndex: 1 }}>
                 <MapContainer center={busLocation} zoom={14} style={{ height: '100%', width: '100%' }}>
@@ -430,7 +430,7 @@ const AdminDashboard = () => {
                     attribution='&copy; OpenStreetMap contributors'
                   />
                   <Marker position={busLocation} icon={busIcon}>
-                    <Popup><b>Bus Route {selectedRoute}</b><br/>Live Location</Popup>
+                    <Popup><b>Bus Route {selectedRoute}</b><br />Live Location</Popup>
                   </Marker>
                 </MapContainer>
               </div>
@@ -447,8 +447,8 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div 
-                  className="glass" 
+                <div
+                  className="glass"
                   onClick={() => setShowRouteComplaintsModal(true)}
                   style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, cursor: 'pointer', transition: 'all 0.2s' }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
@@ -506,43 +506,44 @@ const AdminDashboard = () => {
                 <Plus size={18} /> Add New Route
               </button>
             </div>
-            
+
             {isLoading ? <p>Loading routes...</p> : routesList.length === 0 ? <p>No routes configured yet. Add your first bus route!</p> : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {routesList.map((r, i) => {
                   const driverName = usersList.find(u => u.login_id === r.driver_id)?.name || 'Unassigned';
                   return (
-                  <div key={i} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div key={i} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white', backgroundColor: 'var(--secondary-orange)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>Route {r.route_id}</span>
+                          <h3 style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem', color: 'var(--text-dark)' }}>{r.route_name}</h3>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => openEditRoute(r)} style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Edit</button>
+                          <button onClick={() => handleDeleteRoute(r.route_id)} style={{ background: 'none', border: 'none', color: '#cf1322', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Delete</button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span style={{ color: 'var(--text-light)' }}>Bus Number:</span>
+                          <span style={{ fontWeight: 'bold', color: 'var(--text-dark)' }}>{r.bus_number}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span style={{ color: 'var(--text-light)' }}>Assigned Driver:</span>
+                          <span style={{ fontWeight: 'bold', color: 'var(--primary-blue)' }}>{driverName}</span>
+                        </div>
+                      </div>
+
                       <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white', backgroundColor: 'var(--secondary-orange)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>Route {r.route_id}</span>
-                        <h3 style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem', color: 'var(--text-dark)' }}>{r.route_name}</h3>
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => openEditRoute(r)} style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Edit</button>
-                        <button onClick={() => handleDeleteRoute(r.route_id)} style={{ background: 'none', border: 'none', color: '#cf1322', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>Delete</button>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '600' }}>Waypoints:</span>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-dark)', lineHeight: 1.5 }}>
+                          {r.stops || 'No stops defined'}
+                        </p>
                       </div>
                     </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--text-light)' }}>Bus Number:</span>
-                        <span style={{ fontWeight: 'bold', color: 'var(--text-dark)' }}>{r.bus_number}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--text-light)' }}>Assigned Driver:</span>
-                        <span style={{ fontWeight: 'bold', color: 'var(--primary-blue)' }}>{driverName}</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '600' }}>Waypoints:</span>
-                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-dark)', lineHeight: 1.5 }}>
-                        {r.stops || 'No stops defined'}
-                      </p>
-                    </div>
-                  </div>
-                )})}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -570,7 +571,7 @@ const AdminDashboard = () => {
                 Admins
               </button>
             </div>
-            
+
             {isLoading ? <p>Loading users...</p> : (
               <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -590,7 +591,7 @@ const AdminDashboard = () => {
                         <td style={{ padding: '1rem', fontWeight: '600', whiteSpace: 'nowrap' }}>{u.name}</td>
                         <td style={{ padding: '1rem', color: 'var(--text-light)', whiteSpace: 'nowrap' }}>{u.login_id}</td>
                         <td style={{ padding: '1rem' }}>
-                          <span style={{ 
+                          <span style={{
                             backgroundColor: u.role === 'admin' ? '#fff0e6' : u.role === 'driver' ? '#e6fae6' : '#e6f0fa',
                             color: u.role === 'admin' ? 'var(--secondary-orange)' : u.role === 'driver' ? '#28a745' : 'var(--primary-blue)',
                             padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'capitalize'
@@ -626,7 +627,7 @@ const AdminDashboard = () => {
           <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Grievance God Mode</h2>
             <p style={{ color: 'var(--text-light)', marginTop: '-1rem', marginBottom: '1rem' }}>You can see real names of anonymous posters.</p>
-            
+
             {isLoading ? <p>Loading complaints...</p> : grievances.length === 0 ? <p>No complaints yet!</p> : grievances.map((comp) => (
               <div key={comp._id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: comp.status === 'resolved' ? '4px solid #28a745' : '4px solid var(--secondary-orange)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -636,7 +637,7 @@ const AdminDashboard = () => {
                     </h3>
                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{comp.route} • {comp.time}</p>
                   </div>
-                  <span style={{ 
+                  <span style={{
                     fontSize: '0.75rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '8px',
                     backgroundColor: comp.status === 'resolved' ? '#e6fae6' : '#fff1f0',
                     color: comp.status === 'resolved' ? '#28a745' : '#cf1322'
@@ -645,7 +646,7 @@ const AdminDashboard = () => {
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: '1rem', color: 'var(--text-dark)' }}>{comp.text}</p>
-                
+
                 <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid #f0f0f0', paddingTop: '1rem', marginTop: '0.5rem' }}>
                   {comp.status === 'pending' && (
                     <button onClick={() => handleResolveGrievance(comp._id)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -668,83 +669,84 @@ const AdminDashboard = () => {
             // Check Date
             const logDate = new Date(log.timestamp || log.synced_at || log.created_at || Date.now()).toISOString().split('T')[0];
             if (attFilterDate && logDate !== attFilterDate) return false;
-            
+
             // Check Route
             if (attFilterRoute !== 'All' && String(log.route_id) !== String(attFilterRoute)) return false;
-            
+
             // Check City
             if (attFilterCity !== 'All') {
               const routeInfo = routesList.find(r => String(r.route_id) === String(log.route_id));
               const logCity = routeInfo?.city || 'Bareilly';
               if (logCity !== attFilterCity) return false;
             }
-            
+
             return true;
           });
 
           return (
-          <div className="animate-fade-in glass" style={{ padding: '2rem', borderRadius: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)' }}>Daily Attendance Logs</h2>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>City</label>
-                  <select value={attFilterCity} onChange={e => { setAttFilterCity(e.target.value); setAttFilterRoute('All'); }} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }}>
-                    <option value="All">All Cities</option>
-                    {uniqueCities.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>Route</label>
-                  <select value={attFilterRoute} onChange={e => setAttFilterRoute(e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }}>
-                    <option value="All">All Routes</option>
-                    {routesList.filter(r => attFilterCity === 'All' || (r.city || 'Bareilly') === attFilterCity).map(r => (
-                      <option key={r.route_id} value={r.route_id}>Route {r.route_id} ({r.route_name})</option>
-                    ))}
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>Date</label>
-                  <input type="date" value={attFilterDate} onChange={e => setAttFilterDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+            <div className="animate-fade-in glass" style={{ padding: '2rem', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)' }}>Daily Attendance Logs</h2>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>City</label>
+                    <select value={attFilterCity} onChange={e => { setAttFilterCity(e.target.value); setAttFilterRoute('All'); }} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }}>
+                      <option value="All">All Cities</option>
+                      {uniqueCities.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>Route</label>
+                    <select value={attFilterRoute} onChange={e => setAttFilterRoute(e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }}>
+                      <option value="All">All Routes</option>
+                      {routesList.filter(r => attFilterCity === 'All' || (r.city || 'Bareilly') === attFilterCity).map(r => (
+                        <option key={r.route_id} value={r.route_id}>Route {r.route_id} ({r.route_name})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>Date</label>
+                    <input type="date" value={attFilterDate} onChange={e => setAttFilterDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {isLoading ? <p>Loading attendance logs...</p> : (
-              <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
-                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Student ID / Name</th>
-                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Route ID</th>
-                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Time</th>
-                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Method</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAttendanceLogs.length === 0 ? (
-                      <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-light)' }}>No attendance logs found.</td></tr>
-                    ) : filteredAttendanceLogs.map((log, i) => (
-                      <tr key={log._id || i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                        <td style={{ padding: '1rem', fontWeight: '600' }}>{log.student_name || log.login_id || 'Unknown'}</td>
-                        <td style={{ padding: '1rem' }}>{log.route_id || 'N/A'}</td>
-                        <td style={{ padding: '1rem', color: 'var(--text-light)' }}>{new Date(log.timestamp || log.synced_at || log.created_at || Date.now()).toLocaleString()}</td>
-                        <td style={{ padding: '1rem' }}>
-                          <span style={{ 
-                            backgroundColor: '#e6fae6', color: '#28a745',
-                            padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold'
-                          }}>
-                            Hardware (Face/RFID)
-                          </span>
-                        </td>
+
+              {isLoading ? <p>Loading attendance logs...</p> : (
+                <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+                        <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Student ID / Name</th>
+                        <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Route ID</th>
+                        <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Time</th>
+                        <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Method</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )})()}
+                    </thead>
+                    <tbody>
+                      {filteredAttendanceLogs.length === 0 ? (
+                        <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-light)' }}>No attendance logs found.</td></tr>
+                      ) : filteredAttendanceLogs.map((log, i) => (
+                        <tr key={log._id || i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                          <td style={{ padding: '1rem', fontWeight: '600' }}>{log.student_name || log.login_id || 'Unknown'}</td>
+                          <td style={{ padding: '1rem' }}>{log.route_id || 'N/A'}</td>
+                          <td style={{ padding: '1rem', color: 'var(--text-light)' }}>{new Date(log.timestamp || log.synced_at || log.created_at || Date.now()).toLocaleString()}</td>
+                          <td style={{ padding: '1rem' }}>
+                            <span style={{
+                              backgroundColor: '#e6fae6', color: '#28a745',
+                              padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold'
+                            }}>
+                              Hardware (Face/RFID)
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
       </main>
 
@@ -758,7 +760,7 @@ const AdminDashboard = () => {
               </h2>
               <button onClick={() => setShowRouteComplaintsModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} color="var(--text-dark)" /></button>
             </div>
-            
+
             <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {grievances.filter(g => String(g.route) === String(selectedRoute) && g.status === 'pending').length === 0 ? (
                 <p style={{ textAlign: 'center', color: 'var(--text-light)', marginTop: '2rem' }}>No pending complaints for this route! 🎉</p>
@@ -793,20 +795,20 @@ const AdminDashboard = () => {
             <form onSubmit={handleSaveUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Full Name</label>
-                <input required type="text" value={userFormData.name} onChange={e => setUserFormData({...userFormData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                <input required type="text" value={userFormData.name} onChange={e => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Login ID</label>
-                <input required disabled={!!editingUser} type="text" value={userFormData.login_id} onChange={e => setUserFormData({...userFormData, login_id: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: editingUser ? '#f0f0f0' : 'white' }} />
+                <input required disabled={!!editingUser} type="text" value={userFormData.login_id} onChange={e => setUserFormData({ ...userFormData, login_id: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: editingUser ? '#f0f0f0' : 'white' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Password {editingUser && '(Leave blank to keep current)'}</label>
-                <input required={!editingUser} type="text" value={userFormData.password} onChange={e => setUserFormData({...userFormData, password: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                <input required={!editingUser} type="text" value={userFormData.password} onChange={e => setUserFormData({ ...userFormData, password: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Role</label>
-                  <select value={userFormData.role} onChange={e => setUserFormData({...userFormData, role: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
+                  <select value={userFormData.role} onChange={e => setUserFormData({ ...userFormData, role: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
                     <option value="student">Student</option>
                     <option value="driver">Driver</option>
                     <option value="admin">Admin</option>
@@ -814,7 +816,7 @@ const AdminDashboard = () => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Route</label>
-                  <select value={userFormData.route_id} onChange={e => setUserFormData({...userFormData, route_id: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}>
+                  <select value={userFormData.route_id} onChange={e => setUserFormData({ ...userFormData, route_id: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}>
                     {routesList.map(r => (
                       <option key={r.route_id} value={r.route_id}>Route {r.route_id} - {r.route_name}</option>
                     ))}
@@ -825,7 +827,7 @@ const AdminDashboard = () => {
               {userFormData.role === 'student' && (
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Fee Status</label>
-                  <select value={userFormData.fee_status} onChange={e => setUserFormData({...userFormData, fee_status: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
+                  <select value={userFormData.fee_status} onChange={e => setUserFormData({ ...userFormData, fee_status: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
                     <option value="paid">Paid</option>
                     <option value="pending">Pending / Unpaid</option>
                   </select>
@@ -834,7 +836,7 @@ const AdminDashboard = () => {
               {userFormData.role === 'driver' && (
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Phone Number</label>
-                  <input type="tel" placeholder="+91 9876543210" value={userFormData.phone} onChange={e => setUserFormData({...userFormData, phone: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                  <input type="tel" placeholder="+91 9876543210" value={userFormData.phone} onChange={e => setUserFormData({ ...userFormData, phone: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
                 </div>
               )}
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
@@ -855,21 +857,21 @@ const AdminDashboard = () => {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Route ID</label>
-                  <input required disabled={!!editingRoute} placeholder="e.g. 1" type="text" value={routeFormData.route_id} onChange={e => setRouteFormData({...routeFormData, route_id: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: editingRoute ? '#f0f0f0' : 'white' }} />
+                  <input required disabled={!!editingRoute} placeholder="e.g. 1" type="text" value={routeFormData.route_id} onChange={e => setRouteFormData({ ...routeFormData, route_id: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: editingRoute ? '#f0f0f0' : 'white' }} />
                 </div>
                 <div style={{ flex: 2 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Route Name</label>
-                  <input required placeholder="e.g. City Station to Campus" type="text" value={routeFormData.route_name} onChange={e => setRouteFormData({...routeFormData, route_name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                  <input required placeholder="e.g. City Station to Campus" type="text" value={routeFormData.route_name} onChange={e => setRouteFormData({ ...routeFormData, route_name: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Bus Number</label>
-                  <input required placeholder="e.g. UP 14 AB 1234" type="text" value={routeFormData.bus_number} onChange={e => setRouteFormData({...routeFormData, bus_number: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
+                  <input required placeholder="e.g. UP 14 AB 1234" type="text" value={routeFormData.bus_number} onChange={e => setRouteFormData({ ...routeFormData, bus_number: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Assign Driver</label>
-                  <select value={routeFormData.driver_id} onChange={e => setRouteFormData({...routeFormData, driver_id: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}>
+                  <select value={routeFormData.driver_id} onChange={e => setRouteFormData({ ...routeFormData, driver_id: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}>
                     <option value="">Select a Driver</option>
                     {usersList.filter(u => u.role === 'driver').map(d => (
                       <option key={d.login_id} value={d.login_id}>{d.name} ({d.login_id})</option>
@@ -879,7 +881,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Stops / Waypoints (Comma separated)</label>
-                <textarea required placeholder="Civil Lines, DD Puram, University" value={routeFormData.stops} onChange={e => setRouteFormData({...routeFormData, stops: e.target.value})} rows="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', resize: 'none' }} />
+                <textarea required placeholder="Civil Lines, DD Puram, University" value={routeFormData.stops} onChange={e => setRouteFormData({ ...routeFormData, stops: e.target.value })} rows="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', resize: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={() => setShowRouteModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
