@@ -248,7 +248,7 @@ const AdminDashboard = () => {
       const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/routes');
       if (res.data.status === 'success') setRoutesList(res.data.data);
     } catch (err) {
-      alert("Failed to save route");
+      alert(err.response?.data?.detail || err.message || "Failed to save route");
     }
   };
 
