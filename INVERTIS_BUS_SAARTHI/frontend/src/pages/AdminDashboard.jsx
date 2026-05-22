@@ -36,7 +36,13 @@ const AdminDashboard = () => {
   const [liveAttendance, setLiveAttendance] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [grievances, setGrievances] = useState([]);
+  const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Attendance Filters
+  const [attFilterCity, setAttFilterCity] = useState('All');
+  const [attFilterRoute, setAttFilterRoute] = useState('All');
+  const [attFilterDate, setAttFilterDate] = useState(new Date().toISOString().split('T')[0]);
 
   // User Management Modal State
   const [showUserModal, setShowUserModal] = useState(false);
@@ -51,7 +57,7 @@ const AdminDashboard = () => {
   const [routesList, setRoutesList] = useState([]);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
-  const [routeFormData, setRouteFormData] = useState({ route_id: '', route_name: '', bus_number: '', driver_id: '', stops: '' });
+  const [routeFormData, setRouteFormData] = useState({ route_id: '', route_name: '', bus_number: '', driver_id: '', stops: '', city: 'Bareilly' });
 
   // Fleet Tracking State
   const [selectedRoute, setSelectedRoute] = useState('1');
@@ -96,6 +102,10 @@ const AdminDashboard = () => {
       setLiveAttendance(prev => [newRecord, ...prev].slice(0, 10)); // Keep last 10
     });
 
+    socket.on('global_attendance', (data) => {
+      setAttendanceLogs(prev => [data, ...prev]);
+    });
+
     socket.on('live_telemetry', (data) => {
       if (data.location && data.location.lat && data.location.lng) {
         setBusLocation([data.location.lat, data.location.lng]);
@@ -130,6 +140,10 @@ const AdminDashboard = () => {
         // Fetch grievances for stats regardless of tab
         const gRes = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/grievances');
         if (gRes.data.status === 'success') setGrievances(gRes.data.data);
+
+        // Fetch attendance logs
+        const attRes = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/attendance');
+        if (attRes.data.status === 'success') setAttendanceLogs(attRes.data.data);
 
         // Fetch users globally for driver lookups and user management
         const res = await axios.get('https://invertis-bus-saarthi-backend.onrender.com/api/users');
@@ -240,7 +254,7 @@ const AdminDashboard = () => {
 
   const openAddRoute = () => {
     setEditingRoute(null);
-    setRouteFormData({ route_id: '', route_name: '', bus_number: '', driver_id: '', stops: '' });
+    setRouteFormData({ route_id: '', route_name: '', bus_number: '', driver_id: '', stops: '', city: 'Bareilly' });
     setShowRouteModal(true);
   };
 
@@ -312,7 +326,8 @@ const AdminDashboard = () => {
             { id: 'overview', icon: <MapPin size={18} />, label: 'Fleet Overview' },
             { id: 'routes', icon: <Navigation size={18} />, label: 'Route Management' },
             { id: 'users', icon: <Users size={18} />, label: 'User Directory' },
-            { id: 'grievances', icon: <MessageSquare size={18} />, label: 'Grievance Portal' }
+            { id: 'grievances', icon: <MessageSquare size={18} />, label: 'Grievance Portal' },
+            { id: 'attendance', icon: <CheckCircle2 size={18} />, label: 'Daily Attendance' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -646,6 +661,91 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* ----------------- TAB: ATTENDANCE ----------------- */}
+        {activeTab === 'attendance' && (() => {
+          const uniqueCities = [...new Set(routesList.map(r => r.city || 'Bareilly'))];
+          const filteredAttendanceLogs = attendanceLogs.filter(log => {
+            // Check Date
+            const logDate = new Date(log.timestamp || log.synced_at || log.created_at || Date.now()).toISOString().split('T')[0];
+            if (attFilterDate && logDate !== attFilterDate) return false;
+            
+            // Check Route
+            if (attFilterRoute !== 'All' && String(log.route_id) !== String(attFilterRoute)) return false;
+            
+            // Check City
+            if (attFilterCity !== 'All') {
+              const routeInfo = routesList.find(r => String(r.route_id) === String(log.route_id));
+              const logCity = routeInfo?.city || 'Bareilly';
+              if (logCity !== attFilterCity) return false;
+            }
+            
+            return true;
+          });
+
+          return (
+          <div className="animate-fade-in glass" style={{ padding: '2rem', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)' }}>Daily Attendance Logs</h2>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>City</label>
+                  <select value={attFilterCity} onChange={e => { setAttFilterCity(e.target.value); setAttFilterRoute('All'); }} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }}>
+                    <option value="All">All Cities</option>
+                    {uniqueCities.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>Route</label>
+                  <select value={attFilterRoute} onChange={e => setAttFilterRoute(e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }}>
+                    <option value="All">All Routes</option>
+                    {routesList.filter(r => attFilterCity === 'All' || (r.city || 'Bareilly') === attFilterCity).map(r => (
+                      <option key={r.route_id} value={r.route_id}>Route {r.route_id} ({r.route_name})</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-light)', marginBottom: '0.25rem' }}>Date</label>
+                  <input type="date" value={attFilterDate} onChange={e => setAttFilterDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                </div>
+              </div>
+            </div>
+            
+            {isLoading ? <p>Loading attendance logs...</p> : (
+              <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Student ID / Name</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Route ID</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Time</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e0e0e0' }}>Method</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAttendanceLogs.length === 0 ? (
+                      <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-light)' }}>No attendance logs found.</td></tr>
+                    ) : filteredAttendanceLogs.map((log, i) => (
+                      <tr key={log._id || i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '1rem', fontWeight: '600' }}>{log.student_name || log.login_id || 'Unknown'}</td>
+                        <td style={{ padding: '1rem' }}>{log.route_id || 'N/A'}</td>
+                        <td style={{ padding: '1rem', color: 'var(--text-light)' }}>{new Date(log.timestamp || log.synced_at || log.created_at || Date.now()).toLocaleString()}</td>
+                        <td style={{ padding: '1rem' }}>
+                          <span style={{ 
+                            backgroundColor: '#e6fae6', color: '#28a745',
+                            padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold'
+                          }}>
+                            Hardware (Face/RFID)
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )})()}
+
       </main>
 
       {/* Route Specific Pending Complaints Modal */}
@@ -769,7 +869,7 @@ const AdminDashboard = () => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Assign Driver</label>
-                  <select required value={routeFormData.driver_id} onChange={e => setRouteFormData({...routeFormData, driver_id: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}>
+                  <select value={routeFormData.driver_id} onChange={e => setRouteFormData({...routeFormData, driver_id: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}>
                     <option value="">Select a Driver</option>
                     {usersList.filter(u => u.role === 'driver').map(d => (
                       <option key={d.login_id} value={d.login_id}>{d.name} ({d.login_id})</option>

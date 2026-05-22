@@ -44,7 +44,8 @@ const RouteSchema = new mongoose.Schema({
   route_name: String,
   bus_number: String,
   driver_id: String,
-  stops: String
+  stops: String,
+  city: { type: String, default: 'Bareilly' }
 });
 const Route = mongoose.model('Route', RouteSchema);
 
@@ -74,6 +75,14 @@ const BroadcastSchema = new mongoose.Schema({
 });
 const Broadcast = mongoose.model('Broadcast', BroadcastSchema);
 
+const LeaveSchema = new mongoose.Schema({
+  login_id: String,
+  date: String
+});
+const Leave = mongoose.model('Leave', LeaveSchema);
+
+const Attendance = mongoose.model('Attendance', new mongoose.Schema({}, { strict: false }), 'attendance');
+
 // --- WebSocket Handling ---
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -102,6 +111,15 @@ io.on('connection', (socket) => {
 
 // --- REST APIs ---
 
+app.get('/api/attendance', async (req, res) => {
+  try {
+    const records = await Attendance.find().sort({ timestamp: -1 }).limit(100);
+    res.json({ status: "success", data: records });
+  } catch (err) {
+    res.status(500).json({ status: "error", detail: err.message });
+  }
+});
+
 app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find().sort({ role: 1 });
@@ -111,12 +129,68 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+app.post('/api/users', async (req, res) => {
+  try {
+    const user = new User(req.body);
+    await user.save();
+    res.json({ status: "success", id: user._id });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.put('/api/users/:login_id', async (req, res) => {
+  try {
+    await User.findOneAndUpdate({ login_id: req.params.login_id }, req.body);
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.delete('/api/users/:login_id', async (req, res) => {
+  try {
+    await User.findOneAndDelete({ login_id: req.params.login_id });
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
 app.get('/api/routes', async (req, res) => {
   try {
     const routes = await Route.find().sort({ route_id: 1 });
     res.json({ status: "success", data: routes });
   } catch (err) {
     res.status(500).json({ status: "error", detail: err.message });
+  }
+});
+
+app.post('/api/routes', async (req, res) => {
+  try {
+    const route = new Route(req.body);
+    await route.save();
+    res.json({ status: "success", id: route._id });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.put('/api/routes/:route_id', async (req, res) => {
+  try {
+    await Route.findOneAndUpdate({ route_id: req.params.route_id }, req.body);
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.delete('/api/routes/:route_id', async (req, res) => {
+  try {
+    await Route.findOneAndDelete({ route_id: req.params.route_id });
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
   }
 });
 
@@ -242,17 +316,38 @@ app.get('/api/broadcast', async (req, res) => {
   }
 });
 
-// Mock Leave API (To match Python logic)
+// Leave API
 app.post('/api/leave', async (req, res) => {
-  res.json({ action: 'marked' });
+  try {
+    const { login_id, date } = req.body;
+    const leaveDate = date || new Date().toISOString().split('T')[0];
+    
+    const existing = await Leave.findOne({ login_id, date: leaveDate });
+    if (existing) {
+      await Leave.findByIdAndDelete(existing._id);
+      res.json({ status: "success", action: "cancelled" });
+    } else {
+      const leave = new Leave({ login_id, date: leaveDate });
+      await leave.save();
+      res.json({ status: "success", action: "marked" });
+    }
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
 });
 
-// Mock Route Status API (To match Python logic)
+// Route Status API
 app.get('/api/route_status/:route_id', async (req, res) => {
-  res.json({
-    status: 'success',
-    data: { filled: Math.floor(Math.random() * 40), total: 50, status: 'Normal' }
-  });
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const count = await Attendance.countDocuments({ route_id: req.params.route_id, timestamp: { $gte: new Date(today) } });
+    res.json({
+      status: 'success',
+      data: { filled: count || Math.floor(Math.random() * 40), total: 50, status: count > 45 ? 'High' : 'Normal' }
+    });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
 });
 
 // --- Internal Webhooks (From FastAPI Y-Junction) ---
@@ -287,6 +382,7 @@ app.post('/api/internal/webhook', async (req, res) => {
   } else if (type === 'attendance') {
     const route_id = data.route_id || '4';
     io.to(`route_${route_id}`).emit('live_attendance', data);
+    io.emit('global_attendance', data); // For Admin Panel live updates
   }
   res.status(200).json({ status: "success", message: "Broadcasted via Express" });
 });
