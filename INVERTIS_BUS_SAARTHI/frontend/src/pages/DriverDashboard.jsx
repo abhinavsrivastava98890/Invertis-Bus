@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { LogOut, MapPin, Users, Power, Navigation, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -34,7 +35,7 @@ const DriverDashboard = () => {
       setCurrentStopIndex(prev => prev + 1);
     } else {
       setIsTripActive(false);
-      alert("Trip Completed Successfully!");
+      toast.success("Trip Completed Successfully!");
     }
   };
 
@@ -84,7 +85,7 @@ const DriverDashboard = () => {
               <span style={{ fontWeight: 'bold', color: 'var(--secondary-orange)' }}>Route 4</span>
             </div>
 
-            <div style={{ backgroundColor: '#f8f9fa', padding: '1.5rem', borderRadius: '16px', textAlign: 'center' }}>
+            <div style={{ backgroundColor: 'var(--bg-color)', padding: '1.5rem', borderRadius: '16px', textAlign: 'center' }}>
               <p style={{ color: 'var(--text-light)', fontWeight: '600', marginBottom: '0.5rem' }}>CURRENT/NEXT STOP</p>
               <h1 style={{ color: 'var(--primary-blue)', fontSize: '2.5rem', margin: '0 0 1rem 0' }}>{stops[currentStopIndex].name}</h1>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#e6f0fa', color: 'var(--primary-blue)', padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 'bold' }}>

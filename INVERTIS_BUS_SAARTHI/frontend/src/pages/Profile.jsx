@@ -19,7 +19,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="h-screen flex flex-col relative" style={{ backgroundColor: '#f4f7fb', overflowY: 'auto' }}>
+    <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)', overflowY: 'auto' }}>
       {/* Header */}
       <header style={{
         padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -82,7 +82,7 @@ const Profile = () => {
           {/* Digital ID Card (Toggleable) */}
           {showIdCard && (
             <div className="animate-slide-up" style={{
-              backgroundColor: 'white', padding: '1.5rem', borderRadius: '20px',
+              backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '20px',
               boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '2px solid var(--primary-blue)',
               textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem'
             }}>

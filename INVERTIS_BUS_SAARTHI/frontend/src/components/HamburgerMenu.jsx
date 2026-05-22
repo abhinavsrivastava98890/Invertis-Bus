@@ -1,11 +1,14 @@
 import { X, Users, Home, User, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../index.css';
 
 const HamburgerMenu = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
+
+  const isActive = (path) => location.pathname === path;
 
   if (!isOpen) return null;
 
@@ -44,37 +47,45 @@ const HamburgerMenu = ({ isOpen, onClose }) => {
               color: 'var(--white)', borderRadius: '12px', border: 'none',
               fontSize: '1.2rem', fontWeight: '600', cursor: 'pointer',
               boxShadow: '0 4px 14px 0 rgba(255, 102, 0, 0.3)',
-              marginBottom: '1rem', transition: 'transform 0.2s'
+              marginBottom: '1rem', transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
           >
             <Users size={24} />
             Bus Community
           </button>
 
           {[
-            { icon: Home, label: 'Home', action: () => { onClose(); navigate('/home'); } },
-            { icon: User, label: 'Profile', action: () => { onClose(); navigate('/profile'); } },
-            { icon: Settings, label: 'Settings', action: () => { onClose(); navigate('/settings'); } },
+            { icon: Home, label: 'Home', path: '/home' },
+            { icon: User, label: 'Profile', path: '/profile' },
+            { icon: Settings, label: 'Settings', path: '/settings' },
           ].map((item, index) => (
             <button 
               key={index}
-              onClick={item.action}
+              onClick={() => { onClose(); navigate(item.path); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '1rem',
-                padding: '1rem', backgroundColor: 'transparent',
-                color: 'var(--text-dark)', borderRadius: '10px', border: 'none',
-                fontSize: '1.05rem', fontWeight: '500', cursor: 'pointer',
-                transition: 'background-color 0.2s'
+                padding: '1rem', backgroundColor: isActive(item.path) ? 'var(--bg-color)' : 'transparent',
+                color: isActive(item.path) ? 'var(--primary-blue)' : 'var(--text-dark)', borderRadius: '10px', border: 'none',
+                fontSize: '1.05rem', fontWeight: isActive(item.path) ? '600' : '500', cursor: 'pointer',
+                transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-color)';
-                e.currentTarget.style.color = 'var(--primary-blue)';
+                if (!isActive(item.path)) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-color)';
+                  e.currentTarget.style.color = 'var(--primary-blue)';
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = 'var(--text-dark)';
+                if (!isActive(item.path)) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-dark)';
+                }
               }}
             >
               <item.icon size={22} />

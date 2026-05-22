@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bus, User, Lock, ArrowRight, Shield, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -14,15 +14,41 @@ const Login = () => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [lockoutTimer, setLockoutTimer] = useState(null);
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    let interval;
+    if (lockoutTimer) {
+      setIsLocked(true);
+      interval = setInterval(() => {
+        const remaining = lockoutTimer - Date.now();
+        if (remaining <= 0) {
+          setLockoutTimer(null);
+          setIsLocked(false);
+          setErrorMessage('');
+        } else {
+          const m = Math.floor(remaining / 60000);
+          const s = Math.floor((remaining % 60000) / 1000);
+          setErrorMessage(`Too many login attempts. Try again in ${m}:${s < 10 ? '0'+s : s}`);
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutTimer]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isLocked) return;
+    setErrorMessage('');
     if (userId && password) {
       setIsLoading(true);
       try {
         const response = await axios.post(`${BACKEND_URL}/api/login`, {
           login_id: userId,
-          password: password
+          password: password,
+          role: loginType
         });
 
         if (response.data.status === 'success') {
@@ -46,7 +72,15 @@ const Login = () => {
         }
       } catch (error) {
         console.error("Login failed:", error);
-        alert(error.response?.data?.detail || "Invalid Credentials or Server Down");
+        if (error.response?.status === 429 && error.response?.data?.blockedUntil) {
+          const remaining = error.response.data.blockedUntil - Date.now();
+          const m = Math.floor(remaining / 60000);
+          const s = Math.floor((remaining % 60000) / 1000);
+          setErrorMessage(`Too many login attempts. Try again in ${m}:${s < 10 ? '0'+s : s}`);
+          setLockoutTimer(error.response.data.blockedUntil);
+        } else {
+          setErrorMessage(error.response?.data?.detail || "Invalid Credentials or Server Down");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +88,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative p-4" style={{ backgroundColor: '#f4f7fb', overflow: 'hidden' }}>
+    <div className="min-h-screen flex items-center justify-center relative p-4" style={{ backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px',
         borderRadius: '50%', background: 'var(--primary-blue)', opacity: '0.1', filter: 'blur(40px)'
@@ -64,11 +98,11 @@ const Login = () => {
         borderRadius: '50%', background: 'var(--secondary-orange)', opacity: '0.1', filter: 'blur(40px)'
       }}></div>
 
-      <div className="glass animate-slide-up" style={{
-        width: '100%', maxWidth: '450px', padding: '3rem 2.5rem',
-        borderRadius: '20px', zIndex: 1, margin: '0 1.5rem'
+      <div className="glass animate-slide-up p-login" style={{
+        width: '100%', maxWidth: '450px', /* padding handled by p-login */
+        borderRadius: '20px', zIndex: 1, margin: '0 1rem'
       }}>
-        <div className="flex flex-col items-center mb-6">
+        <div className="flex flex-col items-center" style={{ marginBottom: '1.25rem' }}>
           <div style={{
             background: loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)',
             padding: '1rem',
@@ -77,8 +111,8 @@ const Login = () => {
           }}>
             {loginType === 'admin' ? <Shield size={32} color="white" /> : loginType === 'driver' ? <Car size={32} color="white" /> : <Bus size={32} color="white" />}
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary-blue)' }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-light)', marginTop: '0.5rem' }}>Login to your account</p>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary-blue)', margin: 0, lineHeight: 1.2 }}>Welcome Back</h2>
+          <p style={{ color: 'var(--text-light)', margin: 0 }}>Login to your account</p>
         </div>
 
         {/* Toggle Switch */}
@@ -121,7 +155,7 @@ const Login = () => {
                 required
                 style={{
                   width: '100%', padding: '1rem 1rem 1rem 3rem',
-                  borderRadius: '12px', border: '1px solid #e0e0e0',
+                  borderRadius: '12px', border: '1px solid var(--border-color)',
                   fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s'
                 }}
               />
@@ -142,20 +176,29 @@ const Login = () => {
                 required
                 style={{
                   width: '100%', padding: '1rem 1rem 1rem 3rem',
-                  borderRadius: '12px', border: '1px solid #e0e0e0',
+                  borderRadius: '12px', border: '1px solid var(--border-color)',
                   fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s'
                 }}
               />
             </div>
           </div>
 
-          <button type="submit" className={`btn`} style={{
+          {errorMessage && (
+            <div className="animate-fade-in" style={{
+              color: '#cf1322', backgroundColor: '#fff1f0', padding: '0.75rem', borderRadius: '8px', 
+              fontSize: '0.85rem', fontWeight: '500', marginTop: '0.5rem', textAlign: 'center', border: '1px solid #ffa39e'
+            }}>
+              {errorMessage}
+            </div>
+          )}
+
+          <button type="submit" disabled={isLocked || isLoading} className={`btn hover-scale`} style={{
             marginTop: '1rem', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '1.1rem',
-            backgroundColor: loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)',
-            color: 'white', border: 'none'
+            backgroundColor: (isLocked || isLoading) ? '#ccc' : (loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)'),
+            color: 'white', border: 'none', cursor: (isLocked || isLoading) ? 'not-allowed' : 'pointer'
           }}>
-            Login
-            <ArrowRight size={20} />
+            {isLocked ? 'Locked' : (isLoading ? 'Logging in...' : 'Login')}
+            {!isLocked && !isLoading && <ArrowRight size={20} />}
           </button>
         </form>
       </div>

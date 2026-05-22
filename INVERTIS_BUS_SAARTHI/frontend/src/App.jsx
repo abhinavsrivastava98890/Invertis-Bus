@@ -1,11 +1,17 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Splash from './pages/Splash';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import { Toaster } from 'react-hot-toast';
 import './index.css';
+
+// Apply dark mode immediately from localStorage (before first render)
+if (localStorage.getItem('pref_dark') === 'true') {
+  document.body.classList.add('dark-mode');
+}
 
 // Lazy loading pages for better performance
 const Home = lazy(() => import('./pages/Home'));
@@ -32,6 +38,21 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="app-container">
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                borderRadius: '12px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
+                fontSize: '0.9rem',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              },
+              success: { style: { background: '#e6fae6', color: '#28a745' } },
+              error: { style: { background: '#fff1f0', color: '#cf1322' } },
+            }}
+          />
           <Suspense fallback={<div className="h-screen flex items-center justify-center text-primary-blue font-bold">Loading...</div>}>
             <Routes>
               {/* Public Routes */}

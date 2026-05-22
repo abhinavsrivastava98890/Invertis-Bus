@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Image as ImageIcon, Video, Mic, X, ThumbsUp, ShieldAlert, CheckCircle2, UserCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -68,10 +69,10 @@ const Community = () => {
         setComplaints([newComp, ...complaints]);
         setShowModal(false);
         setNewComplaintText('');
-        alert("Complaint raised successfully. It is visible anonymously to other students.");
+        toast.success("Complaint raised anonymously!");
       }
     } catch (error) {
-      alert("Failed to submit grievance. Please try again.");
+      toast.error("Failed to submit. Please try again.");
     }
   };
 
@@ -94,12 +95,12 @@ const Community = () => {
         c._id === id ? { ...c, status: 'resolved' } : c
       ));
     } catch (err) {
-      alert("Failed to resolve complaint.");
+      toast.error("Failed to resolve complaint.");
     }
   };
 
   return (
-    <div className="h-screen flex flex-col relative" style={{ backgroundColor: '#f4f7fb' }}>
+    <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)' }}>
       {/* Header */}
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -159,13 +160,13 @@ const Community = () => {
 
             {/* Media Attachment Mockup (Insta Style) */}
             {comp.type === 'photo' && (
-              <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid #e0e0e0' }}>
+              <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
                 <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800" alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'cover' }} />
               </div>
             )}
 
             {comp.type === 'video' && (
-              <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid #e0e0e0', backgroundColor: 'black', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'black', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=800" alt="Video Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, position: 'absolute' }} />
                 <div style={{ zIndex: 1, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
                   <div style={{ width: 0, height: 0, borderTop: '10px solid transparent', borderBottom: '10px solid transparent', borderLeft: '16px solid white', marginLeft: '5px' }}></div>
@@ -174,7 +175,7 @@ const Community = () => {
             )}
 
             {comp.type === 'audio' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '30px', marginTop: '0.5rem', border: '1px solid #e0e0e0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '30px', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
                 <button style={{ backgroundColor: 'var(--primary-blue)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                   <div style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '10px solid white', marginLeft: '3px' }}></div>
                 </button>
@@ -235,7 +236,7 @@ const Community = () => {
           zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
         }}>
           <div className="animate-slide-up" style={{
-            backgroundColor: 'white', width: '100%', maxWidth: '600px', borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
+            backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '600px', borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
             padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
             boxShadow: '0 -10px 40px rgba(0,0,0,0.2)'
           }}>
@@ -256,7 +257,7 @@ const Community = () => {
                 placeholder="What's the issue? (e.g. Bus is overcrowded, Rash driving...)"
                 rows={4}
                 style={{
-                  width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #e0e0e0',
+                  width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)',
                   fontSize: '1rem', outline: 'none', resize: 'none', fontFamily: 'inherit'
                 }}
                 required
@@ -264,13 +265,13 @@ const Community = () => {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="button" onClick={() => alert("Photo upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
+                  <button type="button" onClick={() => toast("Photo upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
                     <ImageIcon size={18} color="var(--primary-blue)" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Photo</span>
                   </button>
-                  <button type="button" onClick={() => alert("Video upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
+                  <button type="button" onClick={() => toast("Video upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
                     <Video size={18} color="#cf1322" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Video</span>
                   </button>
-                  <button type="button" onClick={() => alert("Voice note coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #e0e0e0', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
+                  <button type="button" onClick={() => toast("Voice note coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
                     <Mic size={18} color="var(--secondary-orange)" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Audio</span>
                   </button>
                 </div>

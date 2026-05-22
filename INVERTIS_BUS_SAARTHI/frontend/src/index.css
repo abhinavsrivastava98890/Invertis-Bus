@@ -12,6 +12,138 @@
   --glass-bg: rgba(255, 255, 255, 0.9);
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --card-bg: #ffffff;
+  --border-color: #e0e0e0;
+}
+
+body.dark-mode {
+  --bg-color: #0f1117;
+  --text-dark: #e8eaf0;
+  --text-light: #9ba3b8;
+  --white: #1a1d2e;
+  --glass-bg: rgba(26, 29, 46, 0.95);
+  --card-bg: #1a1d2e;
+  --border-color: #2a2d3e;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.4);
+  background-color: #0f1117;
+  color: #e8eaf0;
+}
+
+/* ---- GLOBAL DARK MODE OVERRIDES ---- */
+/* Force all white/light backgrounds to dark */
+body.dark-mode div,
+body.dark-mode main,
+body.dark-mode section,
+body.dark-mode aside {
+  border-color: #2a2d3e;
+}
+
+body.dark-mode .glass {
+  background: rgba(26, 29, 46, 0.97) !important;
+  border-color: #2a2d3e !important;
+}
+
+/* Cards with hardcoded white */
+body.dark-mode [style*="background-color: white"],
+body.dark-mode [style*="background-color:#fff"],
+body.dark-mode [style*="background-color: #fff"],
+body.dark-mode [style*="backgroundColor: 'white'"],
+body.dark-mode [style*="background: white"],
+body.dark-mode [style*="background-color: rgb(255, 255, 255)"] {
+  background-color: #1a1d2e !important;
+}
+
+body.dark-mode [style*="background-color: #f8f9fa"],
+body.dark-mode [style*="background-color:#f8f9fa"],
+body.dark-mode [style*="background-color: #f4f7fb"],
+body.dark-mode [style*="background-color:#f4f7fb"] {
+  background-color: #13151f !important;
+}
+
+body.dark-mode [style*="background-color: #e6f0fa"],
+body.dark-mode [style*="background-color:#e6f0fa"] {
+  background-color: #0d1f35 !important;
+}
+
+body.dark-mode [style*="background-color: #e6fae6"],
+body.dark-mode [style*="background-color:#e6fae6"] {
+  background-color: #0d2a15 !important;
+}
+
+body.dark-mode [style*="background-color: #fff0e6"],
+body.dark-mode [style*="background-color:#fff0e6"],
+body.dark-mode [style*="background-color: #fff1f0"],
+body.dark-mode [style*="background-color:#fff1f0"] {
+  background-color: #2a1510 !important;
+}
+
+/* Text colors */
+body.dark-mode [style*="color: #333"],
+body.dark-mode [style*="color:#333"],
+body.dark-mode [style*="color: rgb(51, 51, 51)"] {
+  color: #e8eaf0 !important;
+}
+
+body.dark-mode [style*="color: #666"],
+body.dark-mode [style*="color:#666"] {
+  color: #9ba3b8 !important;
+}
+
+body.dark-mode [style*="color: var(--text-dark)"] {
+  color: #e8eaf0 !important;
+}
+
+body.dark-mode [style*="color: var(--text-light)"] {
+  color: #9ba3b8 !important;
+}
+
+/* Table rows */
+body.dark-mode tr:hover {
+  background-color: #1e2235 !important;
+}
+
+body.dark-mode thead tr {
+  background-color: #13151f !important;
+}
+
+body.dark-mode th,
+body.dark-mode td {
+  border-color: #2a2d3e !important;
+  color: #e8eaf0 !important;
+}
+
+/* Inputs & selects */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #13151f !important;
+  color: #e8eaf0 !important;
+  border-color: #2a2d3e !important;
+}
+
+body.dark-mode input::placeholder {
+  color: #9ba3b8 !important;
+}
+
+/* Borders */
+body.dark-mode [style*="border: 1px solid #e0e0e0"],
+body.dark-mode [style*="border-bottom: 1px solid #e0e0e0"],
+body.dark-mode [style*="borderBottom: '1px solid #e0e0e0'"],
+body.dark-mode [style*="border-bottom: 2px solid #e0e0e0"],
+body.dark-mode [style*="borderBottom: '2px solid #e0e0e0'"] {
+  border-color: #2a2d3e !important;
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar {
+  width: 6px;
+}
+body.dark-mode ::-webkit-scrollbar-track {
+  background: #0f1117;
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #2a2d3e;
+  border-radius: 3px;
 }
 
 * {
@@ -26,6 +158,35 @@ body {
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Reusable dark-aware page/card classes */
+.page-bg {
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.card-bg {
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark mode - force all child elements to inherit dark backgrounds */
+body.dark-mode .card-bg,
+body.dark-mode .glass {
+  background-color: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+/* Smooth transition for the whole app when toggling dark mode */
+body, body * {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
 }
 
 /* Utilities */
@@ -107,5 +268,118 @@ html, body, #root {
   to { transform: translateY(0); opacity: 1; }
 }
 
-.animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-.animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+.animate-fade-in { animation: fadeIn 0.5s ease-out forwards; opacity: 0; }
+.animate-slide-up { animation: slideUp 0.6s ease-out forwards; opacity: 0; }
+
+/* Animation Delays for Staggering */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+
+/* Micro-interactions */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.hover-scale {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.hover-scale:active {
+  transform: scale(0.95);
+}
+
+/* Soft Glow Pulse */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+.pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseRed {
+  0% { box-shadow: 0 0 0 0 rgba(207, 19, 34, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(207, 19, 34, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(207, 19, 34, 0); }
+}
+.pulse-red {
+  animation: pulseRed 2s infinite;
+}
+
+/* Animated Progress Bar */
+@keyframes stripeMove {
+  0% { background-position: 1rem 0; }
+  100% { background-position: 0 0; }
+}
+.progress-animated {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: stripeMove 1s linear infinite;
+}
+
+/* --- Responsive Utilities --- */
+
+/* Base Paddings */
+.p-header { padding: 1rem 2rem; }
+.p-main { padding: 1.5rem; }
+.p-glass { padding: 1.5rem; }
+.p-login { padding: 3rem 2.5rem; }
+
+/* Grid Layouts */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+.grid-telemetry {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .p-header { padding: 1rem 1.25rem; }
+  .p-main { padding: 1rem; }
+  .p-glass { padding: 1.25rem; }
+  .p-login { padding: 2rem 1.25rem; }
+  
+  .grid-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .grid-telemetry {
+    /* For small screens, speed and direction side-by-side might still be okay, 
+       but let's ensure they stack if below 400px */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+  
+  /* Text scaling */
+  h1 { font-size: 1.2rem !important; }
+  h2 { font-size: 1.15rem !important; }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+  .grid-telemetry {
+    grid-template-columns: 1fr;
+  }
+}

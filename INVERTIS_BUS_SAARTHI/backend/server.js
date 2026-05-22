@@ -227,26 +227,42 @@ app.delete('/api/routes/:route_id', authenticateAdmin, async (req, res) => {
 });
 
 const loginAttempts = new Map();
-setInterval(() => loginAttempts.clear(), 15 * 60 * 1000);
+
+function handleFailedLogin(ip) {
+  const record = loginAttempts.get(ip) || { count: 0, blockUntil: null };
+  record.count += 1;
+  if (record.count >= 10 && !record.blockUntil) {
+    record.blockUntil = Date.now() + 15 * 60 * 1000;
+  }
+  loginAttempts.set(ip, record);
+}
 
 app.post('/api/login', async (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const attempts = loginAttempts.get(ip) || 0;
+  const record = loginAttempts.get(ip) || { count: 0, blockUntil: null };
   
-  if (attempts >= 10) {
-    return res.status(429).json({ detail: "Too many login attempts. Try again in 15 minutes." });
+  if (record.blockUntil) {
+    const timeLeftMs = record.blockUntil - Date.now();
+    if (timeLeftMs > 0) {
+      return res.status(429).json({ 
+        detail: "Too many login attempts. Please wait.", 
+        blockedUntil: record.blockUntil 
+      });
+    } else {
+      loginAttempts.delete(ip);
+    }
   }
 
-  const { login_id, password } = req.body;
+  const { login_id, password, role } = req.body;
   if (!login_id || !password) {
-    loginAttempts.set(ip, attempts + 1);
+    handleFailedLogin(ip);
     return res.status(400).json({ detail: "Missing credentials" });
   }
 
   try {
     const user = await User.findOne({ login_id: String(login_id) }).select('+password');
     if (!user) {
-      loginAttempts.set(ip, attempts + 1);
+      handleFailedLogin(ip);
       return res.status(401).json({ detail: "Invalid Credentials" });
     }
     
@@ -258,8 +274,13 @@ app.post('/api/login', async (req, res) => {
     }
     
     if (!validPassword) {
-      loginAttempts.set(ip, attempts + 1);
+      handleFailedLogin(ip);
       return res.status(401).json({ detail: "Invalid Credentials" });
+    }
+    
+    if (role && user.role !== role) {
+      handleFailedLogin(ip);
+      return res.status(401).json({ detail: `Access denied. Please login via the ${user.role} portal.` });
     }
     
     loginAttempts.delete(ip);
@@ -290,6 +311,15 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/grievances', async (req, res) => {
   try {
     const complaints = await Grievance.find().sort({ created_at: -1 }).select('-realName -login_id');
+    res.json({ status: "success", data: complaints });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.get('/api/admin/grievances', async (req, res) => {
+  try {
+    const complaints = await Grievance.find().sort({ created_at: -1 });
     res.json({ status: "success", data: complaints });
   } catch (err) {
     res.status(500).json({ detail: err.message });
@@ -451,5 +481,5 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(\`Express Web App Backend running on port \${PORT}\`);
+  console.log(`Express Web App Backend running on port ${PORT}`);
 });

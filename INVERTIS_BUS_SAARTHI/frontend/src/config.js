@@ -7,5 +7,5 @@
 // For now, we explicitly define the working production URL.
 // If you want to test locally, comment out the Render URL and uncomment the localhost URL.
 
-export const BACKEND_URL = 'https://invertis-bus.onrender.com';
-// export const BACKEND_URL = 'http://localhost:5000';
+// export const BACKEND_URL = 'https://invertis-bus.onrender.com';
+export const BACKEND_URL = 'http://localhost:5000';

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect, useRef } from 'react';
 import { Bus, Menu, MapPin, Phone, User, Maximize2, X, Compass, Activity, Navigation, Wind, AlertOctagon, CalendarOff, Bell, AlarmClock, Users } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
@@ -173,7 +174,7 @@ const Home = () => {
     if (alarmSet && busLocation[0] !== 28.3180) {
       const dist = Math.abs(busLocation[0] - 28.3500);
       if (dist < 0.005) {
-        alert("WAKE UP ALARM: Your bus is arriving soon!");
+        toast("Wake Up! Your bus is arriving soon!");
         setAlarmSet(false);
         try {
           new Audio('https://www.soundjay.com/buttons/beep-07.mp3').play();
@@ -202,9 +203,9 @@ const Home = () => {
           login_id: user?.login_id || user?.id || 'Unknown'
         });
         setSosActive(true);
-        alert("🚨 SOS ALERT SENT! 🚨\n\nAdmin and your emergency contacts have been notified.");
+        toast.error("SOS Alert Sent! Admin has been notified.", { duration: 5000 });
       } catch (err) {
-        alert("Failed to send SOS. Please check connection.");
+        toast.error("Failed to send SOS. Check your connection.");
       }
     }, 10000);
   };
@@ -225,9 +226,9 @@ const Home = () => {
           route: user?.route_id || '4'
         });
         setSosActive(false);
-        alert("SOS Alert Cancelled.");
+        toast.success("SOS Alert Cancelled.");
       } catch (err) {
-        alert("Failed to cancel SOS. Please check connection.");
+        toast.error("Failed to cancel SOS. Check connection.");
       }
       return;
     }
@@ -244,13 +245,13 @@ const Home = () => {
 
       if (res.data.action === 'marked') {
         setIsNotBoarding(true);
-        alert("Leave Marked! The driver will not wait for you at your stop today.");
+        toast.success("Leave marked! Driver notified.");
       } else {
         setIsNotBoarding(false);
-        alert("Leave Cancelled. Be at your stop on time!");
+        toast.success("Leave cancelled. Be on time!");
       }
     } catch (err) {
-      alert("Failed to update leave status.");
+      toast.error("Failed to update leave status.");
     }
   };
 
@@ -264,9 +265,9 @@ const Home = () => {
 
   return (
     <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
-      <header style={{
+      <header className="p-header" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1rem 2rem', backgroundColor: 'var(--white)', boxShadow: 'var(--shadow)',
+        /* padding: '1rem 2rem', */ backgroundColor: 'var(--white)', boxShadow: 'var(--shadow)',
         zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -307,14 +308,14 @@ const Home = () => {
         </div>
       </header>
 
-      <main style={{
-        flex: 1, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
+      <main className="p-main" style={{
+        flex: 1, /* padding: '1.5rem', */ display: 'flex', flexDirection: 'column', gap: '1.5rem',
         maxWidth: '1200px', margin: '0 auto', width: '100%',
         overflowY: 'auto'
       }}>
 
         {/* Quick Actions Bar */}
-        <div className="animate-slide-up" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', flexShrink: 0 }}>
+        <div className="animate-slide-up delay-100" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', flexShrink: 0 }}>
           <button
             onClick={handleSosClick}
             style={{
@@ -333,7 +334,7 @@ const Home = () => {
           <button
             onClick={() => {
               setAlarmSet(!alarmSet);
-              if (!alarmSet) alert("Wake Me Up Alarm Set! We'll alert you 2km before your stop.");
+              if (!alarmSet) toast.success("Alarm set! You'll be notified 2km before your stop.");
             }}
             style={{
               flex: 1, minWidth: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
@@ -362,9 +363,9 @@ const Home = () => {
           </button>
         </div>
 
-        <div style={{
+        <div className="grid-cards" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          /* gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', */
           gap: '1.5rem',
           height: '100%'
         }}>
@@ -373,8 +374,8 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
             {/* Bus Info Card */}
-            <div className="glass animate-slide-up" style={{
-              padding: '1.5rem', borderRadius: '20px',
+            <div className="glass animate-slide-up p-glass delay-200 hover-lift" style={{
+              /* padding: '1.5rem', */ borderRadius: '20px',
               display: 'flex', flexDirection: 'column', gap: '1.25rem'
             }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-blue)', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -394,7 +395,7 @@ const Home = () => {
                 </div>
                 {/* Progress bar */}
                 <div style={{ height: '8px', backgroundColor: '#e9ecef', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(crowdStatus.filled / crowdStatus.total) * 100}%`, height: '100%', backgroundColor: crowdStatus.status === 'High' ? '#cf1322' : '#28a745', borderRadius: '4px', transition: 'width 0.5s' }}></div>
+                  <div className="progress-animated" style={{ width: `${(crowdStatus.filled / crowdStatus.total) * 100}%`, height: '100%', backgroundColor: crowdStatus.status === 'High' ? '#cf1322' : '#28a745', borderRadius: '4px', transition: 'width 0.5s' }}></div>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-light)' }}>{crowdStatus.filled}/{crowdStatus.total} seats filled. {crowdStatus.status === 'High' ? 'Likely standing only.' : 'Seats available.'}</p>
               </div>
@@ -426,20 +427,20 @@ const Home = () => {
             </div>
 
             {/* Live Telemetry Card */}
-            <div className="glass animate-slide-up" style={{
-              padding: '1.5rem', borderRadius: '20px',
+            <div className="glass animate-slide-up p-glass delay-300 hover-lift" style={{
+              /* padding: '1.5rem', */ borderRadius: '20px',
               display: 'flex', flexDirection: 'column', gap: '1.25rem',
               animationDelay: '0.1s'
             }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-blue)', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
                 Live Sensors
                 <span style={{ fontSize: '0.75rem', backgroundColor: '#e6fae6', color: '#28a745', padding: '0.25rem 0.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <span style={{ width: '6px', height: '6px', backgroundColor: '#28a745', borderRadius: '50%', display: 'inline-block', animation: 'pulse 1.5s infinite' }}></span> Live
+                  <span className="pulse-glow" style={{ width: '8px', height: '8px', backgroundColor: '#28a745', borderRadius: '50%', display: 'inline-block' }}></span> Live
                 </span>
               </h2>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
                     <Activity size={16} color="var(--primary-blue)" /> Speed
                   </div>
@@ -448,7 +449,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
                     <Compass size={16} color="var(--secondary-orange)" /> Direction
                   </div>
@@ -460,7 +461,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '12px', gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
                     <Wind size={16} color={telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)'} /> Ride Comfort
                   </div>
@@ -485,8 +486,8 @@ const Home = () => {
             )}
 
             {/* Route ETA Timeline */}
-            <div className="glass animate-slide-up" style={{
-              padding: '1.5rem', borderRadius: '20px',
+            <div className="glass animate-slide-up p-glass delay-400 hover-lift" style={{
+              /* padding: '1.5rem', */ borderRadius: '20px',
               display: 'flex', flexDirection: 'column', gap: '1rem',
               animationDelay: '0.3s'
             }}>
@@ -601,7 +602,7 @@ const Home = () => {
           zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem'
         }}>
           <div className="animate-slide-up" style={{
-            backgroundColor: 'white', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '400px',
+            backgroundColor: 'var(--card-bg)', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '400px',
             boxShadow: '0 20px 40px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center'
           }}>
             <div style={{ backgroundColor: '#fff1f0', color: '#cf1322', padding: '1rem', borderRadius: '50%', marginBottom: '1rem' }}>
