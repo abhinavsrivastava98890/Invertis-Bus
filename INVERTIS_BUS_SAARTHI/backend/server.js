@@ -474,10 +474,17 @@ app.post('/api/internal/telemetry', verifyWebhook, async (req, res) => {
   });
   await telemetryDoc.save().catch(err => console.error("Failed to save telemetry", err));
 
+  let comfortStatus = 'Smooth';
+  if (data.accel_x !== undefined && data.accel_y !== undefined && data.accel_z !== undefined) {
+    const totalG = Math.sqrt(data.accel_x ** 2 + data.accel_y ** 2 + data.accel_z ** 2);
+    if (totalG > 1.3 || totalG < 0.7) comfortStatus = 'Rough';
+    else if (totalG > 1.1 || totalG < 0.9) comfortStatus = 'Bumpy';
+  }
+
   io.to(`route_${route_id}`).emit('live_telemetry', {
     speed: data.mpu_speed_kmh || data.gps_speed_knots * 1.852 || 0,
     heading: data.heading_deg || 0,
-    comfort: 'Smooth',
+    comfort: comfortStatus,
     location: { lat: data.latitude, lng: data.longitude }
   });
   
@@ -501,10 +508,17 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
     });
     await telemetryDoc.save().catch(err => console.error("Failed to save telemetry to mongo", err));
 
+    let comfortStatus = 'Smooth';
+    if (data.accel_x !== undefined && data.accel_y !== undefined && data.accel_z !== undefined) {
+      const totalG = Math.sqrt(data.accel_x ** 2 + data.accel_y ** 2 + data.accel_z ** 2);
+      if (totalG > 1.3 || totalG < 0.7) comfortStatus = 'Rough';
+      else if (totalG > 1.1 || totalG < 0.9) comfortStatus = 'Bumpy';
+    }
+
     io.to(`route_${route_id}`).emit('live_telemetry', {
       speed: data.mpu_speed_kmh || (data.gps_speed_knots ? data.gps_speed_knots * 1.852 : 0) || 0,
       heading: data.heading_deg || 0,
-      comfort: 'Smooth',
+      comfort: comfortStatus,
       location: { lat: data.latitude, lng: data.longitude }
     });
   } else if (type === 'attendance') {
