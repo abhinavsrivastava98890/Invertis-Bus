@@ -31,7 +31,7 @@ const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [telemetry, setTelemetry] = useState({ speed: 45, heading: 45, comfort: 'Smooth' });
+  const [telemetry, setTelemetry] = useState(null);
   const [isNotBoarding, setIsNotBoarding] = useState(false);
   const [alarmSet, setAlarmSet] = useState(false);
   const [sosActive, setSosActive] = useState(false);
@@ -80,16 +80,23 @@ const Home = () => {
       socket.emit('join_route', { route_id: user?.route_id || '4' });
     });
 
+    let telemetryTimeout;
+
     socket.on('live_telemetry', (data) => {
       console.log('Received telemetry:', data);
       setTelemetry({
-        speed: data.speed || 45,
-        heading: data.heading || 45,
+        speed: data.speed || 0,
+        heading: data.heading || 0,
         comfort: data.comfort || 'Smooth'
       });
       if (data.location && data.location.lat && data.location.lng) {
         setBusLocation([data.location.lat, data.location.lng]);
       }
+
+      clearTimeout(telemetryTimeout);
+      telemetryTimeout = setTimeout(() => {
+        setTelemetry(null);
+      }, 10000); // 10 seconds of no data means disconnected
     });
 
     // Listen for Global Broadcasts
@@ -119,6 +126,7 @@ const Home = () => {
 
     return () => {
       socket.disconnect();
+      clearTimeout(telemetryTimeout);
     };
   }, [user]);
 
@@ -440,42 +448,50 @@ const Home = () => {
             }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-blue)', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
                 Live Sensors
-                <span style={{ fontSize: '0.75rem', backgroundColor: '#e6fae6', color: '#28a745', padding: '0.25rem 0.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <span className="pulse-glow" style={{ width: '8px', height: '8px', backgroundColor: '#28a745', borderRadius: '50%', display: 'inline-block' }}></span> Live
+                <span style={{ fontSize: '0.75rem', backgroundColor: telemetry ? '#e6fae6' : '#fff1f0', color: telemetry ? '#28a745' : '#cf1322', padding: '0.25rem 0.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  {telemetry && <span className="pulse-glow" style={{ width: '8px', height: '8px', backgroundColor: '#28a745', borderRadius: '50%', display: 'inline-block' }}></span>}
+                  {telemetry ? 'Live' : 'Offline'}
                 </span>
               </h2>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
-                    <Activity size={16} color="var(--primary-blue)" /> Speed
+              {telemetry ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
+                      <Activity size={16} color="var(--primary-blue)" /> Speed
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-dark)' }}>
+                      {telemetry.speed.toFixed(1)} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-light)' }}>km/h</span>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-dark)' }}>
-                    {telemetry.speed.toFixed(1)} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-light)' }}>km/h</span>
-                  </div>
-                </div>
 
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
-                    <Compass size={16} color="var(--secondary-orange)" /> Direction
+                  <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
+                      <Compass size={16} color="var(--secondary-orange)" /> Direction
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Navigation size={18} style={{ transform: `rotate(${telemetry.heading}deg)`, transition: 'transform 0.5s ease' }} color="var(--text-dark)" />
+                      {telemetry.heading > 315 || telemetry.heading <= 45 ? 'North' :
+                        telemetry.heading > 45 && telemetry.heading <= 135 ? 'East' :
+                          telemetry.heading > 135 && telemetry.heading <= 225 ? 'South' : 'West'}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Navigation size={18} style={{ transform: `rotate(${telemetry.heading}deg)`, transition: 'transform 0.5s ease' }} color="var(--text-dark)" />
-                    {telemetry.heading > 315 || telemetry.heading <= 45 ? 'North' :
-                      telemetry.heading > 45 && telemetry.heading <= 135 ? 'East' :
-                        telemetry.heading > 135 && telemetry.heading <= 225 ? 'South' : 'West'}
-                  </div>
-                </div>
 
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
-                    <Wind size={16} color={telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)'} /> Ride Comfort
-                  </div>
-                  <div style={{ fontSize: '1rem', fontWeight: '600', color: telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)' }}>
-                    {telemetry.comfort}
+                  <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
+                      <Wind size={16} color={telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)'} /> Ride Comfort
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)' }}>
+                      {telemetry.comfort}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#fff1f0', borderRadius: '12px', border: '1px dashed #ffa39e', color: '#cf1322' }}>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>Sensors Not Connected</p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-light)' }}>Waiting for hardware sync...</p>
+                </div>
+              )}
             </div>
 
             {!showMap && (
