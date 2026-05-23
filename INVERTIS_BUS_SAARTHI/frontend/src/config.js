@@ -8,4 +8,6 @@
 // If you want to test locally, comment out the Render URL and uncomment the localhost URL.
 
 // export const BACKEND_URL = 'https://invertis-bus.onrender.com';
-export const BACKEND_URL = 'http://localhost:5000';
+// export const BACKEND_URL = 'http://localhost:5000';
+// Using environment variable with fallback to Render for Vercel deployment
+export const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://invertis-bus.onrender.com';
