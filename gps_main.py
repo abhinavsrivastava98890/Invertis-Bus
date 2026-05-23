@@ -135,7 +135,7 @@ def main():
     # Start Cloud Sync Worker in background
     try:
         from modules.sync_worker import SyncWorker
-        sync_worker = SyncWorker(interval=5.0)
+        sync_worker = SyncWorker(interval=2.0)
         sync_worker.start()
         print("SyncWorker started for sensor data.")
     except Exception as e:
@@ -280,8 +280,8 @@ def main():
                 except Exception as e:
                     print(f"QMC5883P Read Error: {e}")
 
-            # --- SAVE TO DATABASE (EVERY 10 SECONDS) ---
-            if current_time - last_db_time >= 10.0:
+            # --- SAVE TO DATABASE (EVERY 2 SECONDS) ---
+            if current_time - last_db_time >= 2.0:
                 cursor.execute("""
                     INSERT INTO sensor_data 
                     (latitude, longitude, gps_speed_knots, accel_x, accel_y, accel_z, heading_deg, mpu_speed_kmh)

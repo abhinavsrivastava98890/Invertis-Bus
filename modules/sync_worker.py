@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - SyncWorker - %(levelname)s - %(message)s')
 
 class SyncWorker(threading.Thread):
-    def __init__(self, db_path="data/attendance.db", backend_url="https://invertis-bus.onrender.com", interval=5.0):
+    def __init__(self, db_path="data/attendance.db", backend_url="https://invertis-bus.onrender.com", interval=2.0):
         super().__init__()
         self.db_path = db_path
         self.backend_url = backend_url.rstrip('/')
