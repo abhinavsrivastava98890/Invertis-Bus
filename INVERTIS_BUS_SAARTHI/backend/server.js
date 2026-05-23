@@ -527,7 +527,8 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
     // Save to Mongo
     const attendanceDoc = new Attendance({
       ...data,
-      timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
+      route_id,
+      timestamp: data.timestamp || data.check_in_time ? new Date(data.timestamp || data.check_in_time) : new Date()
     });
     await attendanceDoc.save().catch(err => console.error("Failed to save attendance to mongo", err));
 
