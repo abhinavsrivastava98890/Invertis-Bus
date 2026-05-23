@@ -85,6 +85,17 @@ const Leave = mongoose.model('Leave', LeaveSchema);
 
 const Attendance = mongoose.model('Attendance', new mongoose.Schema({}, { strict: false }), 'attendance');
 
+const TelemetrySchema = new mongoose.Schema({
+  route_id: { type: String, default: '4' },
+  latitude: Number,
+  longitude: Number,
+  gps_speed_knots: Number,
+  mpu_speed_kmh: Number,
+  heading_deg: Number,
+  timestamp: { type: Date, default: Date.now }
+});
+const Telemetry = mongoose.model('Telemetry', TelemetrySchema);
+
 // --- WebSocket Handling ---
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -452,6 +463,17 @@ app.post('/api/internal/telemetry', verifyWebhook, async (req, res) => {
   const data = req.body;
   const route_id = data.route_id || '4'; 
   
+  const telemetryDoc = new Telemetry({
+    route_id,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    gps_speed_knots: data.gps_speed_knots,
+    mpu_speed_kmh: data.mpu_speed_kmh,
+    heading_deg: data.heading_deg,
+    timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
+  });
+  await telemetryDoc.save().catch(err => console.error("Failed to save telemetry", err));
+
   io.to(`route_${route_id}`).emit('live_telemetry', {
     speed: data.mpu_speed_kmh || data.gps_speed_knots * 1.852 || 0,
     heading: data.heading_deg || 0,
@@ -466,6 +488,19 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
   const { type, data } = req.body;
   if (type === 'sensor') {
     const route_id = data.route_id || '4';
+    
+    // Save to Mongo
+    const telemetryDoc = new Telemetry({
+      route_id,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      gps_speed_knots: data.gps_speed_knots,
+      mpu_speed_kmh: data.mpu_speed_kmh,
+      heading_deg: data.heading_deg,
+      timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
+    });
+    await telemetryDoc.save().catch(err => console.error("Failed to save telemetry to mongo", err));
+
     io.to(`route_${route_id}`).emit('live_telemetry', {
       speed: data.mpu_speed_kmh || (data.gps_speed_knots ? data.gps_speed_knots * 1.852 : 0) || 0,
       heading: data.heading_deg || 0,

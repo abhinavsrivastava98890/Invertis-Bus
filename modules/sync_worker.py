@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - SyncWorker - %(levelname)s - %(message)s')
 
 class SyncWorker(threading.Thread):
-    def __init__(self, db_path="data/attendance.db", backend_url="http://127.0.0.1:8000", interval=5.0):
+    def __init__(self, db_path="data/attendance.db", backend_url="https://invertis-bus.onrender.com", interval=5.0):
         super().__init__()
         self.db_path = db_path
         self.backend_url = backend_url.rstrip('/')
@@ -26,8 +26,8 @@ class SyncWorker(threading.Thread):
     def get_endpoints(self):
         return {
             "encoding": f"{self.backend_url}/api/sync/encoding",
-            "attendance": f"{self.backend_url}/api/sync/attendance",
-            "sensor": f"{self.backend_url}/api/sync/sensor"
+            "attendance": f"{self.backend_url}/api/internal/webhook",
+            "sensor": f"{self.backend_url}/api/internal/webhook"
         }
 
     def run(self):
@@ -77,7 +77,9 @@ class SyncWorker(threading.Thread):
                     
                     # 4. Push to cloud backend
                     try:
-                        response = requests.post(endpoint, json=payload, timeout=5)
+                        headers = {'x-hardware-token': 'invertis_hardware_secret_2026'}
+                        payload_to_send = {"type": data_type, "data": payload} if data_type in ['sensor', 'attendance'] else payload
+                        response = requests.post(endpoint, json=payload_to_send, headers=headers, timeout=5)
                         
                         if response.status_code in [200, 201]:
                             # 5. Success -> delete from local queue

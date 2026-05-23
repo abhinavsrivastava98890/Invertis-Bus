@@ -105,14 +105,8 @@ const Home = () => {
       }
     });
 
-    // Fallback: If no socket data arrives, slightly animate it (for testing only)
-    const fallbackInterval = setInterval(() => {
-      setBusLocation(prev => [prev[0] + 0.00005, prev[1] + 0.00005]);
-    }, 5000);
-
     return () => {
       socket.disconnect();
-      clearInterval(fallbackInterval);
     };
   }, [user]);
 
