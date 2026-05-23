@@ -452,7 +452,7 @@ app.get('/api/route_status/:route_id', async (req, res) => {
     const count = await Attendance.countDocuments({ route_id: req.params.route_id, timestamp: { $gte: new Date(today) } });
     res.json({
       status: 'success',
-      data: { filled: count || Math.floor(Math.random() * 40), total: 50, status: count > 45 ? 'High' : 'Normal' }
+      data: { filled: count, total: 50, status: count > 45 ? 'High' : (count > 30 ? 'Moderate' : 'Low') }
     });
   } catch (err) {
     res.status(500).json({ detail: err.message });
@@ -523,6 +523,14 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
     });
   } else if (type === 'attendance') {
     const route_id = data.route_id || '4';
+    
+    // Save to Mongo
+    const attendanceDoc = new Attendance({
+      ...data,
+      timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
+    });
+    await attendanceDoc.save().catch(err => console.error("Failed to save attendance to mongo", err));
+
     io.to(`route_${route_id}`).emit('live_attendance', data);
     io.emit('global_attendance', data);
   }

@@ -105,6 +105,18 @@ const Home = () => {
       }
     });
 
+    // Listen for live attendance to update crowd status
+    socket.on('live_attendance', (data) => {
+      setCrowdStatus(prev => {
+        const newFilled = prev.filled + 1;
+        return {
+          ...prev,
+          filled: newFilled,
+          status: newFilled > 45 ? 'High' : (newFilled > 30 ? 'Moderate' : 'Low')
+        };
+      });
+    });
+
     return () => {
       socket.disconnect();
     };
