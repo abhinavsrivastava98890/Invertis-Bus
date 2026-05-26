@@ -185,11 +185,11 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="flex flex-col" style={{ gap: '1.5rem' }}>
           <div className="animate-fade-in" key={loginType + 'id'}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'var(--text-dark)' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'white' }}>
               {loginType === 'student' ? 'Student ID' : loginType === 'driver' ? 'Driver ID' : 'Admin ID'}
             </label>
             <div className="relative">
-              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}>
+              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }}>
                 <User size={18} />
               </div>
               <input
@@ -200,18 +200,18 @@ const Login = () => {
                 required
                 style={{
                   width: '100%', padding: '1rem 1rem 1rem 3rem',
-                  borderRadius: '12px', border: '1px solid var(--border-color)',
+                  borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)',
                   fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s',
-                  background: 'transparent', color: 'var(--text-dark)',
+                  background: 'rgba(255,255,255,0.05)', color: 'white',
                 }}
               />
             </div>
           </div>
 
           <div className="animate-fade-in" key={loginType + 'pass'}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'var(--text-dark)' }}>Password</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'white' }}>Password</label>
             <div className="relative">
-              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}>
+              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }}>
                 <Lock size={18} />
               </div>
               <input
@@ -222,17 +222,22 @@ const Login = () => {
                 required
                 style={{
                   width: '100%', padding: '1rem 3rem 1rem 3rem',
-                  borderRadius: '12px', border: '1px solid var(--border-color)',
+                  borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)',
                   fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s',
-                  background: 'transparent', color: 'var(--text-dark)',
+                  background: 'rgba(255,255,255,0.05)', color: 'white',
                 }}
               />
-              <div 
+              <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', cursor: 'pointer' }}
+                style={{
+                  position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)',
+                  padding: '4px'
+                }}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </div>
+              </button>
             </div>
           </div>
 

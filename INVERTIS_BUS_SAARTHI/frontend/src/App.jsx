@@ -5,7 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Splash from './pages/Splash';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast, useToasterStore } from 'react-hot-toast';
 import './index.css';
 
 // Apply dark mode immediately from localStorage (before first render)
@@ -21,6 +21,20 @@ const Community = lazy(() => import('./pages/Community'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 
+// Limiter to prevent toast spam
+const TOAST_LIMIT = 4;
+function ToastLimiter() {
+  const { toasts } = useToasterStore();
+  
+  useEffect(() => {
+    toasts
+      .filter((t) => t.visible) 
+      .filter((_, i) => i >= TOAST_LIMIT) 
+      .forEach((t) => toast.dismiss(t.id)); 
+  }, [toasts]);
+
+  return null;
+}
 
 // A component to redirect authenticated users away from Login page
 const PublicRoute = ({ children }) => {
@@ -38,6 +52,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="app-container">
+          <ToastLimiter />
           <Toaster
             position="top-right"
             toastOptions={{
