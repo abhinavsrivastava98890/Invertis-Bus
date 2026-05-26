@@ -295,6 +295,7 @@ app.post('/api/upload/profile_pic', authenticateUser, (req, res) => {
     }
     try {
       await User.findOneAndUpdate({ login_id: req.user.login_id }, { profile_pic: req.file.path });
+      io.emit('profile_update', { login_id: req.user.login_id, profile_pic: req.file.path });
       res.json({ status: "success", url: req.file.path });
     } catch (err) {
       console.error('DB update error for profile pic:', err);

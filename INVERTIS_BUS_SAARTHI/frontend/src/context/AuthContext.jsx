@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { BACKEND_URL } from '../config';
 
 const AuthContext = createContext();
@@ -62,6 +63,25 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
+
+  // Listen for real-time profile updates across devices
+  useEffect(() => {
+    if (!user) return;
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    
+    socket.on('profile_update', (data) => {
+      if (data.login_id === user.id || data.login_id === user.login_id) {
+        setUser(prev => {
+          if (!prev) return prev;
+          const updated = { ...prev, profile_pic: data.profile_pic };
+          localStorage.setItem('bus_saarthi_user', JSON.stringify(updated));
+          return updated;
+        });
+      }
+    });
+
+    return () => socket.disconnect();
+  }, [user?.id, user?.login_id]);
 
   const login = (userData) => {
     setUser(userData);
