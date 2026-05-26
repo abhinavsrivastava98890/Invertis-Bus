@@ -213,6 +213,8 @@ const sendPushNotification = async (loginIdOrRole, payload) => {
     let users = [];
     if (loginIdOrRole === 'admin') {
       users = await User.find({ role: 'admin' });
+    } else if (loginIdOrRole === 'all') {
+      users = await User.find({});
     } else {
       users = [{ login_id: loginIdOrRole }];
     }
@@ -676,6 +678,14 @@ app.post('/api/broadcast', authenticateAdmin, async (req, res) => {
     await broadcast.save();
     
     io.emit("global_broadcast", { ...payload, _id: broadcast._id });
+
+    // Send push notification to ALL subscribed users
+    sendPushNotification('all', {
+      title: `📢 ${req.body.title || 'New Broadcast'}`,
+      body: req.body.message || 'A new announcement has been posted.',
+      url: '/'
+    });
+
     res.json({ status: "success", id: broadcast._id });
   } catch (err) {
     res.status(500).json({ detail: err.message });
