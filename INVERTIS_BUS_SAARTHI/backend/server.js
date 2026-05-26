@@ -110,6 +110,7 @@ const GrievanceSchema = new mongoose.Schema({
   time: String,
   status: { type: String, default: 'pending' },
   upvotes: { type: Number, default: 0 },
+  type: String,
   media_url: String,
   created_at: { type: Date, default: Date.now }
 });
