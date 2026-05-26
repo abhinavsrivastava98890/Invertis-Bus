@@ -302,6 +302,7 @@ class RealtimeAttendance:
                                         
                                         # Queue attendance for sync
                                         from datetime import datetime
+                                        import config
                                         database.add_to_sync_queue(
                                             data_type='attendance',
                                             payload={
@@ -310,7 +311,8 @@ class RealtimeAttendance:
                                                 'fee_status': fee_status,
                                                 'confidence': float(confidence),
                                                 'check_in_time': datetime.now().isoformat(),
-                                                'device_id': "webcam"
+                                                'device_id': "webcam",
+                                                'route_id': getattr(config, 'ROUTE_ID', '4')
                                             }
                                         )
                                         
@@ -326,7 +328,8 @@ class RealtimeAttendance:
                                                     'student_id': student_id,
                                                     'name': name,
                                                     'location': "Bus Camera",
-                                                    'check_in_time': datetime.now().isoformat()
+                                                    'check_in_time': datetime.now().isoformat(),
+                                                    'route_id': getattr(config, 'ROUTE_ID', '4')
                                                 }
                                             )
                                             self.last_unpaid_capture[student_id] = current_time
@@ -349,12 +352,14 @@ class RealtimeAttendance:
                             current_time = time.time()
                             if current_time - getattr(self, 'last_unknown_capture', 0) > 15:
                                 from datetime import datetime
+                                import config
                                 database.add_to_sync_queue(
                                     data_type='attendance',
                                     payload={
                                         'person_type': 'Unknown',
                                         'location': "Bus Camera",
-                                        'check_in_time': datetime.now().isoformat()
+                                        'check_in_time': datetime.now().isoformat(),
+                                        'route_id': getattr(config, 'ROUTE_ID', '4')
                                     }
                                 )
                                 self.last_unknown_capture = current_time

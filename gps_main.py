@@ -293,6 +293,7 @@ def main():
                 try:
                     import json
                     from datetime import datetime
+                    import config
                     sync_conn = sqlite3.connect("data/attendance.db")
                     sync_cursor = sync_conn.cursor()
                     payload = {
@@ -304,7 +305,8 @@ def main():
                         "accel_y": accel_y,
                         "accel_z": accel_z,
                         "heading_deg": heading,
-                        "mpu_speed_kmh": mpu_speed_kmh
+                        "mpu_speed_kmh": mpu_speed_kmh,
+                        "route_id": getattr(config, 'ROUTE_ID', '4')
                     }
                     sync_cursor.execute(
                         "INSERT INTO sync_queue (data_type, payload) VALUES (?, ?)",

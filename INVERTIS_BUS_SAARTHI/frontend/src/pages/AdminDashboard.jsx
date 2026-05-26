@@ -125,8 +125,16 @@ const AdminDashboard = () => {
     });
 
     socket.on('live_attendance', (data) => {
+      let displayName = data.name || data.student_name;
+      if (data.person_type === 'Unknown' || displayName === 'Unknown Face') {
+        displayName = '⚠️ Unknown Face';
+      } else if (data.person_type === 'Unpaid' || data.fee_status === 'unpaid') {
+        displayName = `${displayName || data.student_id || data.login_id || 'Student'} (Unpaid)`;
+      } else if (displayName && (data.student_id || data.login_id)) {
+        displayName = `${displayName} (${data.student_id || data.login_id})`;
+      }
       const newRecord = {
-        name: data.student_name || 'Unknown Student',
+        name: displayName || 'Unknown Student',
         route: data.route_id || 'Unknown',
         status: 'Boarded',
         time: new Date().toLocaleTimeString()
@@ -788,7 +796,34 @@ const AdminDashboard = () => {
                         <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-light)' }}>No attendance logs found.</td></tr>
                       ) : filteredAttendanceLogs.map((log, i) => (
                         <tr key={log._id || i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                          <td style={{ padding: '1rem', fontWeight: '600' }}>{log.student_name || log.login_id || 'Unknown'}</td>
+                          <td style={{ padding: '1rem', fontWeight: '600' }}>
+                            {(() => {
+                              const displayName = log.name || log.student_name;
+                              const displayId = log.student_id || log.login_id;
+                              
+                              if (log.person_type === 'Unknown' || displayName === 'Unknown Face') {
+                                return (
+                                  <span style={{ color: 'var(--secondary-orange)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    ⚠️ Unknown Face
+                                  </span>
+                                );
+                              }
+                              
+                              if (log.person_type === 'Unpaid' || log.fee_status === 'unpaid') {
+                                return (
+                                  <span style={{ color: '#cf1322' }}>
+                                    {displayName || displayId} (Unpaid)
+                                  </span>
+                                );
+                              }
+                              
+                              if (displayName && displayId) {
+                                return `${displayName} (${displayId})`;
+                              }
+                              
+                              return displayName || displayId || 'Unknown Face';
+                            })()}
+                          </td>
                           <td style={{ padding: '1rem' }}>{log.route_id || 'N/A'}</td>
                           <td style={{ padding: '1rem', color: 'var(--text-light)' }}>{new Date(log.timestamp || log.synced_at || log.created_at || Date.now()).toLocaleString()}</td>
                           <td style={{ padding: '1rem' }}>

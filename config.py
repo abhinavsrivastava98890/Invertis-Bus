@@ -117,3 +117,8 @@ GPIO_DOOR_PIN = 17
 
 # Door open duration (seconds)
 DOOR_OPEN_DURATION = 5
+
+# ==================== ROUTE CONFIGURATION ====================
+# Route ID that this vehicle/device is assigned to (e.g., "4")
+ROUTE_ID = "4"
+

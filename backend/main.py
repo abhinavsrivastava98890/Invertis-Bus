@@ -69,6 +69,38 @@ async def sync_attendance(payload: dict = Body(...)):
     try:
         payload["synced_at"] = datetime.utcnow().isoformat()
         
+        # Normalize fields for compatibility
+        student_id = payload.get("student_id") or payload.get("login_id")
+        name = payload.get("name") or payload.get("student_name")
+        route_id = payload.get("route_id")
+        
+        if student_id:
+            payload["student_id"] = student_id
+            payload["login_id"] = student_id
+            
+            # Lookup route and name if missing
+            user = await database.get_user_by_login_id(student_id)
+            if user:
+                if not route_id and user.get("route_id"):
+                    route_id = user.get("route_id")
+                if not name and user.get("name"):
+                    name = user.get("name")
+        
+        # Ensure we always have a route_id and name
+        payload["route_id"] = route_id or "4"
+        if name:
+            payload["name"] = name
+            payload["student_name"] = name
+        else:
+            # Check for person_type fallback
+            person_type = payload.get("person_type")
+            if person_type:
+                payload["name"] = f"{person_type} Face"
+                payload["student_name"] = f"{person_type} Face"
+            else:
+                payload["name"] = "Unknown Student"
+                payload["student_name"] = "Unknown Student"
+                
         # Save attendance to MongoDB
         inserted_id = await database.save_attendance(payload)
         

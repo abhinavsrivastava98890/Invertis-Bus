@@ -854,18 +854,55 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
     // Check wake alarms for students near the bus
     checkWakeAlarms(route_id, data.latitude, data.longitude);
   } else if (type === 'attendance') {
-    const route_id = data.route_id || '4';
+    let route_id = data.route_id;
+    const student_id = data.student_id || data.login_id;
+    let name = data.name || data.student_name;
+    
+    // Look up the student in MongoDB to fill route_id and name if not provided
+    if (student_id) {
+      try {
+        const studentUser = await User.findOne({ login_id: student_id });
+        if (studentUser) {
+          if (!route_id && studentUser.route_id) {
+            route_id = studentUser.route_id;
+          }
+          if (!name && studentUser.name) {
+            name = studentUser.name;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to lookup student details in webhook:", err);
+      }
+    }
+    
+    // Fallbacks
+    route_id = route_id || '4';
+    if (!name) {
+      if (data.person_type) {
+        name = `${data.person_type} Face`;
+      } else {
+        name = 'Unknown Student';
+      }
+    }
+    
+    const normalizedData = {
+      ...data,
+      student_id,
+      login_id: student_id,
+      name,
+      student_name: name,
+      route_id
+    };
     
     // Save to Mongo
     const attendanceDoc = new Attendance({
-      ...data,
-      route_id,
+      ...normalizedData,
       timestamp: data.timestamp || data.check_in_time ? new Date(data.timestamp || data.check_in_time) : new Date()
     });
     await attendanceDoc.save().catch(err => console.error("Failed to save attendance to mongo", err));
 
-    io.to(`route_${route_id}`).emit('live_attendance', data);
-    io.emit('global_attendance', data);
+    io.to(`route_${route_id}`).emit('live_attendance', normalizedData);
+    io.emit('global_attendance', normalizedData);
   }
   res.status(200).json({ status: "success", message: "Broadcasted via Express" });
 });
