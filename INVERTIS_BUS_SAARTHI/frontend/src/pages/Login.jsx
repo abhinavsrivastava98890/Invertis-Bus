@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, User, Lock, ArrowRight, Shield, Car } from 'lucide-react';
+import { Bus, User, Lock, ArrowRight, Shield, Car, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import '../index.css';
 
@@ -13,6 +13,7 @@ const Login = () => {
   const [loginType, setLoginType] = useState('student'); // 'student', 'admin', 'driver'
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [lockoutTimer, setLockoutTimer] = useState(null);
@@ -215,19 +216,25 @@ const Login = () => {
                 <Lock size={18} />
               </div>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 style={{
-                  width: '100%', padding: '1rem 1rem 1rem 3rem',
+                  width: '100%', padding: '1rem 3rem 1rem 3rem',
                   borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)',
                   fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s',
                   background: 'rgba(255,255,255,0.1)', color: 'white',
                   backdropFilter: 'blur(4px)'
                 }}
               />
+              <div 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </div>
             </div>
           </div>
 

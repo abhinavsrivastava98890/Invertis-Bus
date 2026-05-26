@@ -110,6 +110,7 @@ const GrievanceSchema = new mongoose.Schema({
   time: String,
   status: { type: String, default: 'pending' },
   upvotes: { type: Number, default: 0 },
+  upvotedBy: [{ type: String }],
   type: String,
   media_url: String,
   created_at: { type: Date, default: Date.now }
@@ -557,8 +558,23 @@ app.put('/api/grievance/:id/resolve', authenticateAdmin, async (req, res) => {
 
 app.put('/api/grievance/:id/upvote', authenticateUser, async (req, res) => {
   try {
-    await Grievance.findByIdAndUpdate(req.params.id, { $inc: { upvotes: 1 } });
-    res.json({ status: "success" });
+    const grievance = await Grievance.findById(req.params.id);
+    if (!grievance) return res.status(404).json({ detail: "Not found" });
+    
+    if (grievance.upvotedBy && grievance.upvotedBy.includes(req.user.login_id)) {
+      // Remove upvote (toggle off)
+      grievance.upvotes = Math.max(0, grievance.upvotes - 1);
+      grievance.upvotedBy = grievance.upvotedBy.filter(id => id !== req.user.login_id);
+      await grievance.save();
+      return res.json({ status: "success", action: "removed" });
+    } else {
+      // Add upvote
+      grievance.upvotes += 1;
+      if (!grievance.upvotedBy) grievance.upvotedBy = [];
+      grievance.upvotedBy.push(req.user.login_id);
+      await grievance.save();
+      return res.json({ status: "success", action: "added" });
+    }
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }

@@ -125,12 +125,24 @@ const Community = () => {
 
   const handleUpvote = async (id) => {
     try {
-      await axios.put(`${BACKEND_URL}/api/grievance/${id}/upvote`);
-      setComplaints(complaints.map(c =>
-        c._id === id ? { ...c, upvotes: (c.upvotes || 0) + 1 } : c
-      ));
+      const token = user?.token || JSON.parse(localStorage.getItem('bus_saarthi_user') || '{}').token;
+      if (!token) {
+        toast.error("You must be logged in to agree.");
+        return;
+      }
+      const res = await axios.put(`${BACKEND_URL}/api/grievance/${id}/upvote`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setComplaints(complaints.map(c => {
+        if (c._id === id) {
+          const action = res.data.action;
+          return { ...c, upvotes: action === 'removed' ? Math.max(0, (c.upvotes || 0) - 1) : (c.upvotes || 0) + 1 };
+        }
+        return c;
+      }));
     } catch (err) {
       console.error("Failed to upvote", err);
+      toast.error(err.response?.data?.detail || "Failed to upvote");
     }
   };
 
