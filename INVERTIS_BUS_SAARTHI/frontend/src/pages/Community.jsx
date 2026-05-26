@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Plus, Image as ImageIcon, Video, Mic, X, ThumbsUp, ShieldAlert, CheckCircle2, UserCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,10 @@ const Community = () => {
   const [newComplaintText, setNewComplaintText] = useState('');
   const [complaints, setComplaints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaType, setMediaType] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isAdmin = user?.role === 'admin';
 
@@ -50,18 +54,42 @@ const Community = () => {
   const handlePostComplaint = async (e) => {
     e.preventDefault();
     if (!newComplaintText.trim()) return;
+    
+    setIsUploading(true);
+    let uploadedMediaUrl = '';
+
+    if (mediaFile) {
+      const formData = new FormData();
+      formData.append('file', mediaFile);
+      try {
+        const uploadRes = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (uploadRes.data.status === 'success') {
+          uploadedMediaUrl = uploadRes.data.url;
+        }
+      } catch (err) {
+        toast.error("Failed to upload media. Posting text only.");
+      }
+    }
 
     try {
       const payload = {
         realName: user?.name || 'Student User',
         login_id: user?.id || 'Unknown',
         text: newComplaintText,
-        type: 'text', // Assuming text for now, could be media based on attached files
+        type: mediaFile ? mediaType : 'text',
+        media_url: uploadedMediaUrl,
         route: user?.route_id || 'Route 4',
         time: 'Just now'
       };
 
-      const response = await axios.post(`${BACKEND_URL}/api/grievance`, payload);
+      const response = await axios.post(`${BACKEND_URL}/api/grievance`, payload, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
 
       if (response.data.status === 'success') {
         // Add locally to feed immediately
@@ -69,10 +97,30 @@ const Community = () => {
         setComplaints([newComp, ...complaints]);
         setShowModal(false);
         setNewComplaintText('');
+        setMediaFile(null);
+        setMediaType('');
         toast.success("Complaint raised anonymously!");
       }
     } catch (error) {
       toast.error("Failed to submit. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const triggerFileInput = (type) => {
+    setMediaType(type);
+    if (fileInputRef.current) {
+      if (type === 'photo') fileInputRef.current.accept = 'image/*';
+      else if (type === 'video') fileInputRef.current.accept = 'video/*';
+      else if (type === 'audio') fileInputRef.current.accept = 'audio/*';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setMediaFile(e.target.files[0]);
     }
   };
 
@@ -158,34 +206,22 @@ const Community = () => {
               {comp.text}
             </p>
 
-            {/* Media Attachment Mockup (Insta Style) */}
-            {comp.type === 'photo' && (
+            {/* Media Attachment */}
+            {comp.type === 'photo' && comp.media_url && (
               <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
-                <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800" alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'cover' }} />
+                <img src={comp.media_url} alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'cover' }} />
               </div>
             )}
 
-            {comp.type === 'video' && (
-              <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'black', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=800" alt="Video Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, position: 'absolute' }} />
-                <div style={{ zIndex: 1, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-                  <div style={{ width: 0, height: 0, borderTop: '10px solid transparent', borderBottom: '10px solid transparent', borderLeft: '16px solid white', marginLeft: '5px' }}></div>
-                </div>
+            {comp.type === 'video' && comp.media_url && (
+              <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <video src={comp.media_url} controls style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'cover' }} />
               </div>
             )}
 
-            {comp.type === 'audio' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '30px', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
-                <button style={{ backgroundColor: 'var(--primary-blue)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  <div style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '10px solid white', marginLeft: '3px' }}></div>
-                </button>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
-                  {/* Fake Audio Waveform */}
-                  {[...Array(25)].map((_, i) => (
-                    <div key={i} style={{ width: '4px', height: `${Math.random() * 20 + 8}px`, backgroundColor: i < 8 ? 'var(--primary-blue)' : '#cfd4da', borderRadius: '2px' }}></div>
-                  ))}
-                </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 'bold' }}>0:12</span>
+            {comp.type === 'audio' && comp.media_url && (
+              <div style={{ marginTop: '0.5rem', padding: '1rem', backgroundColor: 'var(--bg-color)', borderRadius: '30px', border: '1px solid var(--border-color)' }}>
+                <audio src={comp.media_url} controls style={{ width: '100%' }} />
               </div>
             )}
 
@@ -265,20 +301,26 @@ const Community = () => {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="button" onClick={() => toast("Photo upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
+                  <button type="button" onClick={() => triggerFileInput('photo')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: mediaType === 'photo' ? '#e6f0fa' : 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
                     <ImageIcon size={18} color="var(--primary-blue)" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Photo</span>
                   </button>
-                  <button type="button" onClick={() => toast("Video upload coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
+                  <button type="button" onClick={() => triggerFileInput('video')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: mediaType === 'video' ? '#fdeced' : 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
                     <Video size={18} color="#cf1322" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Video</span>
                   </button>
-                  <button type="button" onClick={() => toast("Voice note coming soon!")} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
+                  <button type="button" onClick={() => triggerFileInput('audio')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: mediaType === 'audio' ? '#fff0e6' : 'transparent', cursor: 'pointer', color: 'var(--text-dark)' }}>
                     <Mic size={18} color="var(--secondary-orange)" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Audio</span>
                   </button>
                 </div>
+                {mediaFile && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--primary-blue)', fontWeight: 'bold' }}>
+                    {mediaFile.name.length > 15 ? mediaFile.name.substring(0, 15) + '...' : mediaFile.name}
+                  </span>
+                )}
               </div>
+              <input type="file" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileChange} />
 
-              <button type="submit" className="btn btn-primary" style={{ padding: '1rem', borderRadius: '12px', fontSize: '1.1rem', marginTop: '0.5rem' }}>
-                Post Complaint Anonymously
+              <button type="submit" disabled={isUploading} className="btn btn-primary" style={{ padding: '1rem', borderRadius: '12px', fontSize: '1.1rem', marginTop: '0.5rem', opacity: isUploading ? 0.7 : 1 }}>
+                {isUploading ? 'Uploading...' : 'Post Complaint Anonymously'}
               </button>
             </form>
           </div>

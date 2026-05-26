@@ -5,11 +5,32 @@ const { Server } = require('socket.io');
 const http = require('http');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// --- Cloudinary Configuration ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'bus_saarthi_media',
+    resource_type: 'auto'
+  }
+});
+
+const upload = multer({ storage: storage });
+
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -37,7 +58,8 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, required: true },
   route_id: String,
   fee_status: String,
-  phone: String
+  phone: String,
+  profile_pic: String
 });
 const User = mongoose.model('User', UserSchema);
 
@@ -59,6 +81,7 @@ const GrievanceSchema = new mongoose.Schema({
   time: String,
   status: { type: String, default: 'pending' },
   upvotes: { type: Number, default: 0 },
+  media_url: String,
   created_at: { type: Date, default: Date.now }
 });
 const Grievance = mongoose.model('Grievance', GrievanceSchema);
@@ -143,6 +166,30 @@ const verifyWebhook = (req, res, next) => {
 };
 
 // --- REST APIs ---
+
+app.post('/api/upload', authenticateUser, upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ detail: "No file uploaded" });
+    }
+    res.json({ status: "success", url: req.file.path });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.post('/api/upload/profile_pic', authenticateUser, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ detail: "No file uploaded" });
+    }
+    // Update user profile pic in db
+    await User.findOneAndUpdate({ login_id: req.user.login_id }, { profile_pic: req.file.path });
+    res.json({ status: "success", url: req.file.path });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
 
 app.get('/api/attendance', authenticateAdmin, async (req, res) => {
   try {

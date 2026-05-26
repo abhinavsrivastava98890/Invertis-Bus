@@ -1,13 +1,42 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ArrowLeft, User, MapPin, Bus, Shield, Camera, QrCode, CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import { BACKEND_URL } from '../config';
+import toast from 'react-hot-toast';
 import '../index.css';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showIdCard, setShowIdCard] = useState(false);
+  const [profilePic, setProfilePic] = useState(user?.profile_pic || null);
+  const fileInputRef = useRef(null);
+
+  const handleProfilePicUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const loadingToast = toast.loading('Uploading profile picture...');
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/upload/profile_pic`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (res.data.status === 'success') {
+        setProfilePic(res.data.url);
+        toast.success('Profile picture updated!', { id: loadingToast });
+      }
+    } catch (err) {
+      toast.error('Failed to upload image.', { id: loadingToast });
+    }
+  };
 
   // Mock attendance data for last 7 days
   const attendanceHistory = [
@@ -53,13 +82,26 @@ const Profile = () => {
             boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '4px solid white', overflow: 'hidden'
           }}>
-            <User size={50} color="var(--primary-blue)" />
-            <button style={{
-              position: 'absolute', bottom: 0, right: 0, backgroundColor: 'var(--secondary-orange)',
-              color: 'white', border: 'none', borderRadius: '50%', padding: '0.4rem', cursor: 'pointer'
-            }}>
+            {profilePic ? (
+              <img src={profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <User size={50} color="var(--primary-blue)" />
+            )}
+            <button 
+              onClick={() => fileInputRef.current.click()}
+              style={{
+                position: 'absolute', bottom: 0, right: 0, backgroundColor: 'var(--secondary-orange)',
+                color: 'white', border: 'none', borderRadius: '50%', padding: '0.4rem', cursor: 'pointer'
+              }}>
               <Camera size={16} />
             </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              accept="image/*" 
+              onChange={handleProfilePicUpload} 
+            />
           </div>
         </div>
 
