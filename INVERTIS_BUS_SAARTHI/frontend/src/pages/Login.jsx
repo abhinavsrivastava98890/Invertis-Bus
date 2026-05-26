@@ -53,10 +53,8 @@ const Login = () => {
 
         if (response.data.status === 'success') {
           const userData = {
-            id: userId,
-            role: response.data.user.role,
-            name: response.data.user.name,
-            route_id: response.data.user.route_id,
+            ...response.data.user,
+            id: response.data.user.login_id || userId,
             token: response.data.token
           };
 
