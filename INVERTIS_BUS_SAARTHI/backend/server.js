@@ -558,23 +558,35 @@ app.put('/api/grievance/:id/resolve', authenticateAdmin, async (req, res) => {
 
 app.put('/api/grievance/:id/upvote', authenticateUser, async (req, res) => {
   try {
-    const grievance = await Grievance.findById(req.params.id);
-    if (!grievance) return res.status(404).json({ detail: "Not found" });
-    
-    if (grievance.upvotedBy && grievance.upvotedBy.includes(req.user.login_id)) {
-      // Remove upvote (toggle off)
-      grievance.upvotes = Math.max(0, grievance.upvotes - 1);
-      grievance.upvotedBy = grievance.upvotedBy.filter(id => id !== req.user.login_id);
-      await grievance.save();
-      return res.json({ status: "success", action: "removed" });
-    } else {
-      // Add upvote
-      grievance.upvotes += 1;
-      if (!grievance.upvotedBy) grievance.upvotedBy = [];
-      grievance.upvotedBy.push(req.user.login_id);
-      await grievance.save();
+    const login_id = req.user.login_id;
+    // Attempt to add upvote atomically
+    const grievanceAdded = await Grievance.findOneAndUpdate(
+      { _id: req.params.id, upvotedBy: { $ne: login_id } },
+      { $inc: { upvotes: 1 }, $addToSet: { upvotedBy: login_id } },
+      { new: true }
+    );
+
+    if (grievanceAdded) {
       return res.json({ status: "success", action: "added" });
     }
+
+    // If it wasn't added, it means they already upvoted (or it doesn't exist)
+    // Attempt to remove upvote atomically
+    const grievanceRemoved = await Grievance.findOneAndUpdate(
+      { _id: req.params.id, upvotedBy: login_id },
+      { $inc: { upvotes: -1 }, $pull: { upvotedBy: login_id } },
+      { new: true }
+    );
+
+    if (grievanceRemoved) {
+      // Ensure upvotes don't go below 0 (just in case)
+      if (grievanceRemoved.upvotes < 0) {
+        await Grievance.findByIdAndUpdate(req.params.id, { upvotes: 0 });
+      }
+      return res.json({ status: "success", action: "removed" });
+    }
+
+    return res.status(404).json({ detail: "Grievance not found" });
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }

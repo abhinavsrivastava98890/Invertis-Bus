@@ -15,6 +15,7 @@ const Community = () => {
   const [complaints, setComplaints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mediaFile, setMediaFile] = useState(null);
+  const [processingUpvotes, setProcessingUpvotes] = useState(new Set());
   const [mediaType, setMediaType] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -124,6 +125,9 @@ const Community = () => {
   };
 
   const handleUpvote = async (id) => {
+    if (processingUpvotes.has(id)) return;
+    setProcessingUpvotes(prev => new Set([...prev, id]));
+    
     try {
       const token = user?.token || JSON.parse(localStorage.getItem('bus_saarthi_user') || '{}').token;
       if (!token) {
@@ -143,6 +147,12 @@ const Community = () => {
     } catch (err) {
       console.error("Failed to upvote", err);
       toast.error(err.response?.data?.detail || "Failed to upvote");
+    } finally {
+      setProcessingUpvotes(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -238,10 +248,14 @@ const Community = () => {
 
             {/* Upvote & Action Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: '1rem', marginTop: '0.5rem' }}>
-              <button onClick={() => handleUpvote(comp._id)} style={{
+              <button onClick={() => handleUpvote(comp._id)} disabled={processingUpvotes.has(comp._id)} style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none',
-                color: 'var(--primary-blue)', fontWeight: '600', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'background-color 0.2s'
-              }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e6f0fa'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                color: processingUpvotes.has(comp._id) ? 'var(--text-light)' : 'var(--primary-blue)', 
+                fontWeight: '600', cursor: processingUpvotes.has(comp._id) ? 'wait' : 'pointer', 
+                padding: '0.5rem', borderRadius: '8px', transition: 'background-color 0.2s',
+                opacity: processingUpvotes.has(comp._id) ? 0.6 : 1
+              }} onMouseEnter={e => !processingUpvotes.has(comp._id) && (e.currentTarget.style.backgroundColor = '#e6f0fa')} 
+                 onMouseLeave={e => !processingUpvotes.has(comp._id) && (e.currentTarget.style.backgroundColor = 'transparent')}>
                 <ThumbsUp size={18} /> {comp.upvotes || 0} Agree
               </button>
 
