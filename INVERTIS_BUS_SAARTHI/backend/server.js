@@ -493,9 +493,12 @@ app.post('/api/login', async (req, res) => {
       status: "success",
       token,
       user: {
+        login_id: user.login_id,
         name: user.name,
         role: user.role,
-        route_id: user.route_id
+        route_id: user.route_id,
+        profile_pic: user.profile_pic,
+        phone: user.phone
       }
     });
   } catch (err) {

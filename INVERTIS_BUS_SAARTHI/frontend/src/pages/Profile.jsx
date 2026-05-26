@@ -9,7 +9,7 @@ import '../index.css';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [showIdCard, setShowIdCard] = useState(false);
   const [profilePic, setProfilePic] = useState(user?.profile_pic || null);
   const fileInputRef = useRef(null);
@@ -30,6 +30,10 @@ const Profile = () => {
       });
       if (res.data.status === 'success') {
         setProfilePic(res.data.url);
+        // Persist the updated profile_pic in local storage via AuthContext
+        if (login && user) {
+          login({ ...user, profile_pic: res.data.url });
+        }
         toast.success('Profile picture updated!', { id: loadingToast });
       } else {
         toast.error('Upload failed: ' + (res.data.detail || 'Unknown error'), { id: loadingToast });
