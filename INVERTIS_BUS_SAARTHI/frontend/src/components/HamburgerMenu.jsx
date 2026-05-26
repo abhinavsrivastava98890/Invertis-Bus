@@ -1,12 +1,14 @@
 import { X, Users, Home, User, Settings, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
 import '../index.css';
 
 const HamburgerMenu = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const { t } = useLang();
 
   const isActive = (path) => location.pathname === path;
 
@@ -57,13 +59,13 @@ const HamburgerMenu = ({ isOpen, onClose }) => {
             }}
           >
             <Users size={24} />
-            Bus Community
+            {t('busCommunity')}
           </button>
 
           {[
-            { icon: Home, label: 'Home', path: '/home' },
-            { icon: User, label: 'Profile', path: '/profile' },
-            { icon: Settings, label: 'Settings', path: '/settings' },
+            { icon: Home, label: t('home'), path: '/home' },
+            { icon: User, label: t('profile'), path: '/profile' },
+            { icon: Settings, label: t('settings'), path: '/settings' },
           ].map((item, index) => (
             <button 
               key={index}
@@ -109,7 +111,7 @@ const HamburgerMenu = ({ isOpen, onClose }) => {
             }}
           >
             <LogOut size={22} />
-            Log Out
+            {t('logout')}
           </button>
         </div>
       </div>

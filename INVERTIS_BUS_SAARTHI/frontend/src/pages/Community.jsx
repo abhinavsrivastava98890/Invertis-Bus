@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Plus, Image as ImageIcon, Video, Mic, X, ThumbsUp, ShieldAlert, CheckCircle2, UserCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import '../index.css';
@@ -10,6 +11,7 @@ import '../index.css';
 const Community = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { lang, t } = useLang();
   const [showModal, setShowModal] = useState(false);
   const [newComplaintText, setNewComplaintText] = useState('');
   const [complaints, setComplaints] = useState([]);
@@ -21,6 +23,41 @@ const Community = () => {
   const fileInputRef = useRef(null);
 
   const isAdmin = user?.role === 'admin';
+
+  const formatTime = (createdAtStr) => {
+    if (!createdAtStr) return t('justNow') || 'Just now';
+    const date = new Date(createdAtStr);
+    if (isNaN(date.getTime())) {
+      // If it's old mock data like '2 hours ago', return it directly
+      return createdAtStr;
+    }
+    
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) {
+      return lang === 'hi' ? 'अभी-अभी' : 'Just now';
+    }
+    if (diffMins < 60) {
+      return lang === 'hi' ? `${diffMins} मिनट पहले` : `${diffMins}m ago`;
+    }
+    if (diffHours < 24) {
+      return lang === 'hi' ? `${diffHours} घंटे पहले` : `${diffHours}h ago`;
+    }
+    if (diffDays === 1) {
+      return lang === 'hi' ? 'कल' : 'Yesterday';
+    }
+    if (diffDays < 7) {
+      return lang === 'hi' ? `${diffDays} दिन पहले` : `${diffDays}d ago`;
+    }
+    
+    return date.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   // Fetch complaints from backend
   useEffect(() => {
@@ -94,7 +131,7 @@ const Community = () => {
 
       if (response.data.status === 'success') {
         // Add locally to feed immediately
-        const newComp = { ...payload, _id: response.data.id, upvotes: 0, status: 'pending' };
+        const newComp = { ...payload, _id: response.data.id, upvotes: 0, status: 'pending', created_at: new Date().toISOString() };
         setComplaints([newComp, ...complaints]);
         setShowModal(false);
         setNewComplaintText('');
@@ -182,8 +219,8 @@ const Community = () => {
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>Grievance Portal</h1>
-            <p style={{ fontSize: '0.75rem', margin: 0, opacity: 0.8 }}>Anonymous Student Feed</p>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>{t('grievancePortal')}</h1>
+            <p style={{ fontSize: '0.75rem', margin: 0, opacity: 0.8 }}>{t('anonymousStudentFeed')}</p>
           </div>
         </div>
       </header>
@@ -191,7 +228,7 @@ const Community = () => {
       {/* Feed Area */}
       <main className="p-main" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '6rem' }}>
         {isLoading ? (
-          <div style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-light)' }}>Loading grievances...</div>
+          <div style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-light)' }}>{t('loadingGrievances')}</div>
         ) : complaints.map((comp) => (
           <div key={comp._id} className="glass animate-slide-up p-glass" style={{
             borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '1rem'
@@ -204,10 +241,10 @@ const Community = () => {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>
-                    {isAdmin ? <span style={{ color: 'var(--primary-blue)' }}>{comp.realName} (Real Name)</span> : 'Anonymous Student'}
+                    {isAdmin ? <span style={{ color: 'var(--primary-blue)' }}>{comp.realName} ({t('realName')})</span> : t('anonymousStudent')}
                   </h3>
                   <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                    {comp.route} • {comp.time}
+                    {comp.route} • {formatTime(comp.created_at || comp.time)}
                   </p>
                 </div>
               </div>
@@ -219,7 +256,7 @@ const Community = () => {
                 display: 'flex', alignItems: 'center', gap: '0.25rem'
               }}>
                 {comp.status === 'resolved' ? <CheckCircle2 size={12} /> : <ShieldAlert size={12} />}
-                {comp.status.toUpperCase()}
+                {comp.status === 'resolved' ? t('resolved') : t('pending')}
               </span>
             </div>
 
@@ -257,7 +294,7 @@ const Community = () => {
                 opacity: processingUpvotes.has(comp._id) ? 0.6 : 1
               }} onMouseEnter={e => !processingUpvotes.has(comp._id) && (e.currentTarget.style.backgroundColor = '#e6f0fa')} 
                  onMouseLeave={e => !processingUpvotes.has(comp._id) && (e.currentTarget.style.backgroundColor = 'transparent')}>
-                <ThumbsUp size={18} /> {comp.upvotes || 0} Agree
+                <ThumbsUp size={18} /> {comp.upvotes || 0} {t('agree')}
               </button>
 
               {isAdmin && comp.status === 'pending' && (
@@ -265,7 +302,7 @@ const Community = () => {
                   backgroundColor: 'var(--secondary-orange)', color: 'white', border: 'none',
                   padding: '0.4rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer'
                 }}>
-                  Mark Resolved
+                  {t('markResolved')}
                 </button>
               )}
             </div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Bell, Moon, Sun, Shield, Globe, Camera, ChevronRight, LogOut, CheckCircle2, Lock, Eye, EyeOff, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import '../index.css';
@@ -55,12 +56,12 @@ const SettingRow = ({ icon, label, sublabel, rightEl, onClick, last }) => (
 const Settings = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { lang, setLanguage, t, translateName } = useLang();
 
   // Persist settings in localStorage
   const [pushNotifications, setPushNotifications] = useState(() => localStorage.getItem('pref_push') !== 'false');
   const [sosAlerts, setSosAlerts] = useState(() => localStorage.getItem('pref_sos') !== 'false');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('pref_dark') === 'true');
-  const [language, setLanguage] = useState(() => localStorage.getItem('pref_lang') || 'English');
   const [faceResetRequested, setFaceResetRequested] = useState(false);
 
   // Change Password modal state
@@ -155,11 +156,11 @@ const Settings = () => {
     }
   };
 
-  const handleSelectLanguage = (lang) => {
-    setLanguage(lang);
-    localStorage.setItem('pref_lang', lang);
+  const handleSelectLanguage = (langName) => {
+    const code = langName === 'Hindi (हिंदी)' ? 'hi' : 'en';
+    setLanguage(code);
     setShowLangModal(false);
-    toast.success(`Language set to ${lang}`);
+    toast.success(code === 'hi' ? 'भाषा हिंदी में बदल गई!' : `Language set to ${langName}`);
   };
 
   const handleLogout = () => {
@@ -187,44 +188,51 @@ const Settings = () => {
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex' }}>
           <ArrowLeft size={24} />
         </button>
-        <h1 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>Settings</h1>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>{t('settings')}</h1>
       </header>
 
       <main className="p-main" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
 
-        {/* Profile Card */}
         <div style={{ ...sectionStyle, padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{
-            width: '52px', height: '52px', borderRadius: '50%',
-            backgroundColor: 'var(--primary-blue)', color: 'white',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: '700', fontSize: '1.4rem', flexShrink: 0,
-          }}>
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </div>
+          {user?.profile_pic ? (
+            <img 
+              src={user.profile_pic} 
+              alt="Profile" 
+              style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} 
+            />
+          ) : (
+            <div style={{
+              width: '52px', height: '52px', borderRadius: '50%',
+              backgroundColor: 'var(--primary-blue)', color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: '700', fontSize: '1.4rem', flexShrink: 0,
+            }}>
+              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
+          )}
           <div>
-            <p style={{ margin: 0, fontWeight: '700', fontSize: '1rem', color: 'var(--text-dark)' }}>{user?.name || 'Unknown User'}</p>
+            <p style={{ margin: 0, fontWeight: '700', fontSize: '1rem', color: 'var(--text-dark)' }}>{translateName(user?.name) || 'Unknown User'}</p>
             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)', textTransform: 'capitalize' }}>
-              {user?.role} · Route {user?.route_id || 'N/A'}
+              {t(user?.role || 'student')} · {t('route')} {user?.route_id || 'N/A'}
             </p>
           </div>
         </div>
 
         {/* Account Section */}
         <div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Account</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('account')}</p>
           <div style={sectionStyle}>
             <SettingRow
               icon={<Lock size={20} color="var(--primary-blue)" />}
-              label="Change Password"
-              sublabel="Update your login password"
+              label={t('changePassword')}
+              sublabel={t('updateLoginPassword')}
               rightEl={<ChevronRight size={18} color="var(--text-light)" />}
               onClick={() => setShowPasswordModal(true)}
             />
             <SettingRow
               icon={<Camera size={20} color={faceResetRequested ? '#28a745' : 'var(--primary-blue)'} />}
-              label={faceResetRequested ? 'Face Rescan Requested ✓' : 'Request Face Data Reset'}
-              sublabel={faceResetRequested ? 'Admin will contact you shortly' : 'If face recognition is failing'}
+              label={faceResetRequested ? t('faceRescanRequested') : t('requestFaceDataReset')}
+              sublabel={faceResetRequested ? t('adminWillContact') : t('ifFaceRecognitionFailing')}
               rightEl={faceResetRequested ? <CheckCircle2 size={20} color="#28a745" /> : <ChevronRight size={18} color="var(--text-light)" />}
               onClick={!faceResetRequested ? handleFaceReset : undefined}
               last
@@ -234,18 +242,18 @@ const Settings = () => {
 
         {/* Notifications Section */}
         <div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Notifications</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('notificationsSection')}</p>
           <div style={sectionStyle}>
             <SettingRow
               icon={<Bell size={20} color="var(--primary-blue)" />}
-              label="Push Notifications"
-              sublabel="Bus arrival, delay & broadcast alerts"
+              label={t('pushNotifications')}
+              sublabel={t('busArrivalAlerts')}
               rightEl={<Toggle value={pushNotifications} onChange={handleTogglePush} />}
             />
             <SettingRow
               icon={<Shield size={20} color="#cf1322" />}
-              label="SOS Alerts"
-              sublabel="Receive SOS notifications (admin)"
+              label={t('sosAlertsLabel')}
+              sublabel={t('receiveSOSNotifs')}
               rightEl={<Toggle value={sosAlerts} onChange={handleToggleSos} color="#cf1322" />}
               last
             />
@@ -254,21 +262,21 @@ const Settings = () => {
 
         {/* Appearance Section */}
         <div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Appearance</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('appearance')}</p>
           <div style={sectionStyle}>
             <SettingRow
               icon={darkMode ? <Moon size={20} color="var(--primary-blue)" /> : <Sun size={20} color="var(--secondary-orange)" />}
-              label="Dark Mode"
-              sublabel={darkMode ? 'Currently using dark theme' : 'Currently using light theme'}
+              label={t('darkMode')}
+              sublabel={darkMode ? t('usingDarkTheme') : t('usingLightTheme')}
               rightEl={<Toggle value={darkMode} onChange={handleToggleDark} color="var(--primary-blue)" />}
             />
             <SettingRow
               icon={<Globe size={20} color="var(--primary-blue)" />}
-              label="Language"
-              sublabel="App display language"
+              label={t('language')}
+              sublabel={t('appDisplayLanguage')}
               rightEl={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--text-light)', fontWeight: '600' }}>{language.split(' ')[0]}</span>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-light)', fontWeight: '600' }}>{lang === 'hi' ? 'हिंदी' : 'English'}</span>
                   <ChevronRight size={18} color="var(--text-light)" />
                 </div>
               }
@@ -280,10 +288,10 @@ const Settings = () => {
 
         {/* App Info */}
         <div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>About</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '700', marginBottom: '0.6rem', marginLeft: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('about')}</p>
           <div style={sectionStyle}>
-            <SettingRow icon={<Shield size={20} color="var(--primary-blue)" />} label="App Version" rightEl={<span style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: '600' }}>v1.0.0</span>} />
-            <SettingRow icon={<Globe size={20} color="var(--primary-blue)" />} label="Privacy Policy" rightEl={<ChevronRight size={18} color="var(--text-light)" />} onClick={() => toast('Privacy policy coming soon!')} last />
+            <SettingRow icon={<Shield size={20} color="var(--primary-blue)" />} label={t('appVersion')} rightEl={<span style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: '600' }}>v1.0.0</span>} />
+            <SettingRow icon={<Globe size={20} color="var(--primary-blue)" />} label={t('privacyPolicy')} rightEl={<ChevronRight size={18} color="var(--text-light)" />} onClick={() => toast('Privacy policy coming soon!')} last />
           </div>
         </div>
 
@@ -299,7 +307,7 @@ const Settings = () => {
           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#ffe4e1'}
           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff1f0'}
         >
-          <LogOut size={20} /> Log Out
+          <LogOut size={20} /> {t('logout')}
         </button>
       </main>
 
@@ -308,14 +316,14 @@ const Settings = () => {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="p-glass" style={{ backgroundColor: 'var(--white)', borderRadius: '20px', width: '100%', maxWidth: '420px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-dark)' }}>Change Password</h2>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-dark)' }}>{t('changePassword')}</h2>
               <button onClick={() => setShowPasswordModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="var(--text-light)" /></button>
             </div>
             <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {[
-                { label: 'Old Password', val: oldPass, set: setOldPass, show: showOld, toggle: () => setShowOld(!showOld) },
-                { label: 'New Password', val: newPass, set: setNewPass, show: showNew, toggle: () => setShowNew(!showNew) },
-                { label: 'Confirm New Password', val: confirmPass, set: setConfirmPass, show: showNew, toggle: () => setShowNew(!showNew) },
+                { label: t('oldPassword'), val: oldPass, set: setOldPass, show: showOld, toggle: () => setShowOld(!showOld) },
+                { label: t('newPassword'), val: newPass, set: setNewPass, show: showNew, toggle: () => setShowNew(!showNew) },
+                { label: t('confirmNewPassword'), val: confirmPass, set: setConfirmPass, show: showNew, toggle: () => setShowNew(!showNew) },
               ].map(({ label, val, set, show, toggle }) => (
                 <div key={label}>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: 'var(--text-light)', marginBottom: '0.4rem' }}>{label}</label>
@@ -346,24 +354,27 @@ const Settings = () => {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div className="p-glass" style={{ backgroundColor: 'var(--white)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>Select Language</h3>
+              <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>{t('selectLanguage')}</h3>
               <button onClick={() => setShowLangModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="var(--text-light)" /></button>
             </div>
-            {languages.map(lang => (
-              <div
-                key={lang}
-                onClick={() => handleSelectLanguage(lang)}
-                style={{
-                  padding: '1rem', borderRadius: '12px', cursor: 'pointer',
-                  backgroundColor: language === lang ? 'rgba(0,86,179,0.08)' : 'transparent',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  marginBottom: '0.25rem', transition: 'all 0.2s',
-                }}
-              >
-                <span style={{ fontWeight: language === lang ? '700' : '500', color: language === lang ? 'var(--primary-blue)' : 'var(--text-dark)' }}>{lang}</span>
-                {language === lang && <CheckCircle2 size={18} color="var(--primary-blue)" />}
-              </div>
-            ))}
+             {languages.map(langName => {
+               const isActive = (langName === 'Hindi (हिंदी)' && lang === 'hi') || (langName === 'English' && lang === 'en');
+               return (
+                 <div
+                   key={langName}
+                   onClick={() => handleSelectLanguage(langName)}
+                   style={{
+                     padding: '1rem', borderRadius: '12px', cursor: 'pointer',
+                     backgroundColor: isActive ? 'rgba(0,86,179,0.08)' : 'transparent',
+                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                     marginBottom: '0.25rem', transition: 'all 0.2s',
+                   }}
+                 >
+                   <span style={{ fontWeight: isActive ? '700' : '500', color: isActive ? 'var(--primary-blue)' : 'var(--text-dark)' }}>{langName}</span>
+                   {isActive && <CheckCircle2 size={18} color="var(--primary-blue)" />}
+                 </div>
+               );
+             })}
           </div>
         </div>
       )}

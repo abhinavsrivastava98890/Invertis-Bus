@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
 import { io } from 'socket.io-client';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
@@ -28,6 +29,36 @@ const busIcon = new L.Icon({
 
 const Home = () => {
   const { user } = useAuth();
+  const { t, lang, translateName } = useLang();
+
+  const translateStatus = (status) => {
+    if (!status) return '';
+    const clean = status.trim().toLowerCase();
+    if (lang === 'hi') {
+      if (clean === 'low') return 'कम';
+      if (clean === 'medium') return 'मध्यम';
+      if (clean === 'high') return 'अधिक';
+      if (clean === 'loading...') return 'लोड हो रहा है...';
+    }
+    return status;
+  };
+
+  const translateComfort = (comfort) => {
+    if (!comfort) return '';
+    const clean = comfort.trim().toLowerCase();
+    if (lang === 'hi') {
+      if (clean === 'smooth') return 'सुगम';
+      if (clean === 'bumpy') return 'अस्थिर';
+    }
+    return comfort;
+  };
+
+  const getDirection = (heading) => {
+    const dir = heading > 315 || heading <= 45 ? 'North' :
+      heading > 45 && heading <= 135 ? 'East' :
+      heading > 135 && heading <= 225 ? 'South' : 'West';
+    return t(dir.toLowerCase());
+  };
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
@@ -312,7 +343,7 @@ const Home = () => {
             <h1 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--primary-blue)', lineHeight: 1.2 }}>
               INVERTIS<span style={{ color: 'var(--secondary-orange)' }}> BUS SAARTHI</span>
             </h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '500' }}>Welcome, {user?.name || 'Student'}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: '500' }}>{t('welcome')}, {translateName(user?.name) || 'Student'}</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -325,13 +356,13 @@ const Home = () => {
             </button>
             {showNotifications && (
               <div className="glass animate-slide-up" style={{ position: 'absolute', top: '100%', right: 0, width: '250px', padding: '1rem', borderRadius: '12px', zIndex: 10, marginTop: '0.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-dark)' }}>Notifications</h4>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-dark)' }}>{t('notifications')}</h4>
                 {latestNotice ? (
                   <div style={{ padding: '0.5rem', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-dark)' }}>
                     <strong style={{ color: 'var(--primary-blue)' }}>{latestNotice.title || 'Admin'}:</strong> {latestNotice.message}
                   </div>
                 ) : (
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)' }}>No new updates.</p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)' }}>{t('noNewUpdates')}</p>
                 )}
               </div>
             )}
@@ -362,7 +393,7 @@ const Home = () => {
             }}
           >
             <AlertOctagon size={16} />
-            {sosTimer !== null ? `CANCEL (${sosTimer}s)` : (sosActive ? 'CANCEL SOS' : 'EMERGENCY')}
+            {sosTimer !== null ? `${t('cancelCountdown')} (${sosTimer}s)` : (sosActive ? t('cancelSos') : t('emergency'))}
           </button>
 
           <button
@@ -378,7 +409,7 @@ const Home = () => {
             }}
           >
             <AlarmClock size={16} color={alarmSet ? 'var(--primary-blue)' : 'var(--text-light)'} />
-            {alarmLoading ? 'Setting...' : alarmSet ? 'Alarm ON' : 'Wake Alarm'}
+            {alarmLoading ? t('setting') : alarmSet ? t('alarmOn') : t('wakeAlarm')}
           </button>
         </div>
 
@@ -398,9 +429,9 @@ const Home = () => {
               display: 'flex', flexDirection: 'column', gap: '1.25rem'
             }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-blue)', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                Your Route Details
+                {t('yourRouteDetails')}
                 <span style={{ fontSize: '0.8rem', backgroundColor: '#e6fae6', color: '#28a745', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
-                  Boarded ✓
+                  {t('boardedStatus')}
                 </span>
               </h2>
 
@@ -408,15 +439,15 @@ const Home = () => {
               <div style={{ backgroundColor: '#fff8f6', padding: '1rem', borderRadius: '12px', border: '1px solid #ffe8e0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--secondary-orange)' }}>
-                    <Users size={16} /> Live Crowd Status
+                    <Users size={16} /> {t('liveCrowdStatus')}
                   </span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: crowdStatus.status === 'High' ? '#cf1322' : '#28a745' }}>{crowdStatus.status}</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: crowdStatus.status === 'High' ? '#cf1322' : '#28a745' }}>{translateStatus(crowdStatus.status)}</span>
                 </div>
                 {/* Progress bar */}
                 <div style={{ height: '8px', backgroundColor: '#e9ecef', borderRadius: '4px', overflow: 'hidden' }}>
                   <div className="progress-animated" style={{ width: `${(crowdStatus.filled / crowdStatus.total) * 100}%`, height: '100%', backgroundColor: crowdStatus.status === 'High' ? '#cf1322' : '#28a745', borderRadius: '4px', transition: 'width 0.5s' }}></div>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-light)' }}>{crowdStatus.filled}/{crowdStatus.total} seats filled. {crowdStatus.status === 'High' ? 'Likely standing only.' : 'Seats available.'}</p>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-light)' }}>{crowdStatus.filled}/{crowdStatus.total} {t('seatsFilled')} {crowdStatus.status === 'High' ? t('likelyStanding') : t('seatsAvailable')}</p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -425,7 +456,7 @@ const Home = () => {
                     <Bus size={20} />
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: '500' }}>Route {routeInfo?.route_id || '4'}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: '500' }}>{t('route')} {routeInfo?.route_id || '4'}</p>
                     <p style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-dark)' }}>{routeInfo?.bus_number || 'UP 25 AB 1234'}</p>
                   </div>
                 </div>
@@ -435,8 +466,8 @@ const Home = () => {
                     <User size={20} />
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: '500' }}>Driver Name</p>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-dark)' }}>{driverInfo?.name || 'Assigning...'}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: '500' }}>{t('driverName')}</p>
+                    <p style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-dark)' }}>{translateName(driverInfo?.name) || t('assigning')}</p>
                   </div>
                   <a href={`tel:${driverInfo?.phone || '+919999999999'}`} style={{ marginLeft: 'auto', background: '#e6fae6', border: 'none', padding: '0.5rem', borderRadius: '50%', color: '#28a745', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Phone size={18} />
@@ -452,10 +483,10 @@ const Home = () => {
               animationDelay: '0.1s'
             }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-blue)', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                Live Sensors
+                {t('liveSensors')}
                 <span style={{ fontSize: '0.75rem', backgroundColor: telemetry ? '#e6fae6' : '#fff1f0', color: telemetry ? '#28a745' : '#cf1322', padding: '0.25rem 0.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   {telemetry && <span className="pulse-glow" style={{ width: '8px', height: '8px', backgroundColor: '#28a745', borderRadius: '50%', display: 'inline-block' }}></span>}
-                  {telemetry ? 'Live' : 'Offline'}
+                  {telemetry ? t('sensorLive') : t('sensorOffline')}
                 </span>
               </h2>
 
@@ -476,25 +507,23 @@ const Home = () => {
                     </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <Navigation size={18} style={{ transform: `rotate(${telemetry.heading}deg)`, transition: 'transform 0.5s ease' }} color="var(--text-dark)" />
-                      {telemetry.heading > 315 || telemetry.heading <= 45 ? 'North' :
-                        telemetry.heading > 45 && telemetry.heading <= 135 ? 'East' :
-                          telemetry.heading > 135 && telemetry.heading <= 225 ? 'South' : 'West'}
+                      {getDirection(telemetry.heading)}
                     </div>
                   </div>
 
                   <div style={{ backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '600' }}>
-                      <Wind size={16} color={telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)'} /> Ride Comfort
+                      <Wind size={16} color={telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)'} /> {t('rideComfort')}
                     </div>
                     <div style={{ fontSize: '1rem', fontWeight: '600', color: telemetry.comfort === 'Smooth' ? '#28a745' : 'var(--secondary-orange)' }}>
-                      {telemetry.comfort}
+                      {translateComfort(telemetry.comfort)}
                     </div>
                   </div>
                 </div>
               ) : (
                 <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#fff1f0', borderRadius: '12px', border: '1px dashed #ffa39e', color: '#cf1322' }}>
-                  <p style={{ margin: 0, fontWeight: 'bold' }}>Sensors Not Connected</p>
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-light)' }}>Waiting for hardware sync...</p>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>{t('sensorsNotConnected')}</p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-light)' }}>{t('waitingForHardware')}</p>
                 </div>
               )}
             </div>
@@ -508,7 +537,7 @@ const Home = () => {
                 }}
               >
                 <MapPin size={22} />
-                Open Live Map
+                {t('openLiveMap')}
               </button>
             )}
 
@@ -518,14 +547,14 @@ const Home = () => {
               display: 'flex', flexDirection: 'column', gap: '1rem',
               animationDelay: '0.3s'
             }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-dark)', margin: 0 }}>Upcoming Stops</h2>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-dark)', margin: 0 }}>{t('upcomingStops')}</h2>
               <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                 <div style={{ position: 'absolute', left: '6px', top: '10px', bottom: '20px', width: '2px', backgroundColor: '#e0e0e0', zIndex: 0 }}></div>
 
                 {(routeInfo?.stops ? routeInfo.stops.split(',').map(s => s.trim()) : ['Civil Lines (Your Stop)', 'Rajendra Nagar', 'DD Puram', 'Invertis University']).map((stop, idx, arr) => {
                   const isActive = idx === 0;
-                  let eta = isActive ? 'Arriving soon' : `${(idx * 5) + 5} mins`;
-                  if (idx === arr.length - 1) eta = `${(idx * 5) + 5} mins (Destination)`;
+                  let eta = isActive ? t('arrivingSoon') : `${(idx * 5) + 5} ${t('minsAway')}`;
+                  if (idx === arr.length - 1) eta = `${(idx * 5) + 5} ${t('minsAway')} (${t('destination')})`;
 
                   return (
                     <div key={idx} style={{ position: 'relative', paddingBottom: '1.25rem', zIndex: 1 }}>
@@ -635,12 +664,12 @@ const Home = () => {
             <div style={{ backgroundColor: '#fff1f0', color: '#cf1322', padding: '1rem', borderRadius: '50%', marginBottom: '1rem' }}>
               <Bell size={40} className="animate-pulse" />
             </div>
-            <h2 style={{ color: '#cf1322', margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>{activeBroadcast.title || 'Important Notice'}</h2>
+            <h2 style={{ color: '#cf1322', margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>{activeBroadcast.title || t('importantNotice')}</h2>
             <p style={{ color: 'var(--text-dark)', fontSize: '1.1rem', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
               {activeBroadcast.message}
             </p>
             <p style={{ color: 'var(--text-light)', fontSize: '0.8rem', margin: '0 0 1.5rem 0' }}>
-              Sent by: {activeBroadcast.sender} • {new Date(activeBroadcast.timestamp).toLocaleTimeString()}
+              {t('sentBy')}: {activeBroadcast.sender} • {new Date(activeBroadcast.timestamp).toLocaleTimeString()}
             </p>
             <button
               onClick={acknowledgeBroadcast}
@@ -650,7 +679,7 @@ const Home = () => {
                 boxShadow: '0 4px 12px rgba(0, 102, 204, 0.3)'
               }}
             >
-              Acknowledge & Close
+              {t('acknowledgeClose')}
             </button>
           </div>
         </div>

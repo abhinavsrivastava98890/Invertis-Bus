@@ -5,11 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import toast from 'react-hot-toast';
+import { useLang } from '../context/LanguageContext';
 import '../index.css';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { t, translateName } = useLang();
   const [showIdCard, setShowIdCard] = useState(false);
   const [profilePic, setProfilePic] = useState(user?.profile_pic || null);
   const fileInputRef = useRef(null);
@@ -65,13 +67,13 @@ const Profile = () => {
           <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
             <ArrowLeft size={24} />
           </button>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>My Profile</h1>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>{t('myProfile')}</h1>
         </div>
         <button 
           onClick={() => setShowIdCard(!showIdCard)}
           style={{ background: 'rgba(255,255,255,0.2)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
-          <QrCode size={18} /> {showIdCard ? 'Hide Pass' : 'Bus Pass'}
+          <QrCode size={18} /> {showIdCard ? t('hidePass') : t('busPass')}
         </button>
       </header>
 
@@ -116,14 +118,14 @@ const Profile = () => {
           
           <div style={{ textAlign: 'center' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-dark)', margin: '0 0 0.25rem 0' }}>
-              {user?.name || 'Student Name'}
+              {translateName(user?.name) || t('studentProfile')}
             </h2>
             <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem' }}>
-              {user?.role === 'admin' ? 'Administrator' : user?.role === 'driver' ? 'Driver ID: DRV-8942' : 'ID: INV-2023-BCA'}
+              {user?.role === 'admin' ? t('administrator') : user?.role === 'driver' ? `${t('driver')} ID: DRV-8942` : `ID: INV-2023-BCA`}
             </p>
             {user?.role === 'student' && (
               <span style={{ backgroundColor: '#e6fae6', color: '#28a745', padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                ✓ Transport Fee Paid (Sem 4)
+                {t('feePaidStatus')}
               </span>
             )}
           </div>
@@ -135,23 +137,23 @@ const Profile = () => {
               boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '2px solid var(--primary-blue)',
               textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem'
             }}>
-              <h3 style={{ margin: 0, color: 'var(--primary-blue)' }}>DIGITAL BUS PASS</h3>
+              <h3 style={{ margin: 0, color: 'var(--primary-blue)' }}>{t('digitalBusPass')}</h3>
               {/* Fake QR Code */}
               <div style={{ width: '150px', height: '150px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
                 <QrCode size={100} color="var(--text-dark)" />
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', margin: 0 }}>Scan this code if face recognition is unavailable.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', margin: 0 }}>{t('scanQrHint')}</p>
             </div>
           )}
 
           {/* Weekly Attendance (For Students) */}
           {user?.role === 'student' && (
             <div className="glass animate-slide-up p-glass" style={{ borderRadius: '20px' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--primary-blue)' }}>Weekly Attendance</h3>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--primary-blue)' }}>{t('weeklyAttendance')}</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {attendanceHistory.map((record, idx) => (
                   <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 'bold' }}>{record.day}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 'bold' }}>{t(record.day.toLowerCase())}</span>
                     <div style={{
                       width: '35px', height: '35px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       backgroundColor: record.status === 'present' ? '#e6fae6' : '#fff1f0',
@@ -166,11 +168,10 @@ const Profile = () => {
             </div>
           )}
 
-          {/* Details Card */}
-          <div className="glass animate-slide-up p-glass" style={{ borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Details Card */}          <div className="glass animate-slide-up p-glass" style={{ borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--primary-blue)' }}>Personal Details</h3>
-              <button style={{ background: 'none', border: 'none', color: 'var(--secondary-orange)', fontWeight: 'bold', cursor: 'pointer' }}>Edit</button>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--primary-blue)' }}>{t('personalDetails')}</h3>
+              <button style={{ background: 'none', border: 'none', color: 'var(--secondary-orange)', fontWeight: 'bold', cursor: 'pointer' }}>{t('edit')}</button>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -178,32 +179,32 @@ const Profile = () => {
                 <Bus size={20} />
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>Assigned Route</p>
-                <p style={{ margin: 0, fontWeight: '600', color: 'var(--text-dark)' }}>Route 4</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{t('myRoute')}</p>
+                <p style={{ margin: 0, fontWeight: '600', color: 'var(--text-dark)' }}>{t('route')} {user?.route_id || '4'}</p>
               </div>
             </div>
-
+ 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '10px', color: 'var(--text-light)' }}>
                 <MapPin size={20} />
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>Default Pickup Stop</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{t('defaultPickupStop')}</p>
                 <p style={{ margin: 0, fontWeight: '600', color: 'var(--text-dark)' }}>Civil Lines, Bareilly</p>
               </div>
             </div>
-
+ 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '10px', color: 'var(--text-light)' }}>
                 <Shield size={20} />
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>Emergency Contact</p>
-                <p style={{ margin: 0, fontWeight: '600', color: 'var(--text-dark)' }}>+91 98765 43210 (Father)</p>
-              </div>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{t('emergencyContact')}</p>
+                <p style={{ margin: 0, fontWeight: '600', color: 'var(--text-dark)' }}>+91 98765 43210 ({t('father')})</p>
             </div>
           </div>
         </div>
+      </div>
       </main>
     </div>
   );

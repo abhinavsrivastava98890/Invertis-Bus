@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bus, User, Lock, ArrowRight, Shield, Car, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
 import '../index.css';
 
 import axios from 'axios';
@@ -10,6 +11,7 @@ import { BACKEND_URL } from '../config';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t, lang, setLanguage } = useLang();
   const [loginType, setLoginType] = useState('student'); // 'student', 'admin', 'driver'
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +34,7 @@ const Login = () => {
         } else {
           const m = Math.floor(remaining / 60000);
           const s = Math.floor((remaining % 60000) / 1000);
-          setErrorMessage(`Too many login attempts. Try again in ${m}:${s < 10 ? '0'+s : s}`);
+          setErrorMessage(`${t('loginAttemptsBlock')}${m}:${s < 10 ? '0'+s : s}`);
         }
       }, 1000);
     }
@@ -75,10 +77,10 @@ const Login = () => {
           const remaining = error.response.data.blockedUntil - Date.now();
           const m = Math.floor(remaining / 60000);
           const s = Math.floor((remaining % 60000) / 1000);
-          setErrorMessage(`Too many login attempts. Try again in ${m}:${s < 10 ? '0'+s : s}`);
+          setErrorMessage(`${t('loginAttemptsBlock')}${m}:${s < 10 ? '0'+s : s}`);
           setLockoutTimer(error.response.data.blockedUntil);
         } else {
-          setErrorMessage(error.response?.data?.detail || "Invalid Credentials or Server Down");
+          setErrorMessage(error.response?.data?.detail || t('invalidCredentials'));
         }
       } finally {
         setIsLoading(false);
@@ -115,7 +117,6 @@ const Login = () => {
         zIndex: 1
       }}></div>
 
-      {/* Invertis Ribbon Header */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -129,6 +130,7 @@ const Login = () => {
         padding: '0.75rem 5%',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
       }}>
         <img 
@@ -136,6 +138,18 @@ const Login = () => {
           alt="Invertis University" 
           style={{ height: '45px', maxHeight: '45px', objectFit: 'contain' }}
         />
+        <button 
+          type="button"
+          onClick={() => setLanguage(lang === 'en' ? 'hi' : 'en')}
+          style={{
+            backgroundColor: 'var(--primary-blue)', color: 'white', border: 'none',
+            padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 'bold',
+            fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
+            boxShadow: '0 2px 8px rgba(0,86,179,0.2)', transition: 'all 0.2s'
+          }}
+        >
+          {lang === 'en' ? 'हिंदी' : 'English'}
+        </button>
       </div>
 
       <div className="animate-slide-up p-login relative" style={{
@@ -156,8 +170,8 @@ const Login = () => {
           }}>
             {loginType === 'admin' ? <Shield size={32} color="white" /> : loginType === 'driver' ? <Car size={32} color="white" /> : <Bus size={32} color="white" />}
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', margin: 0, lineHeight: 1.2 }}>Welcome Back</h2>
-          <p style={{ color: 'rgba(255,255,255,0.7)', margin: 0 }}>Login to your account</p>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', margin: 0, lineHeight: 1.2 }}>{t('loginTitle')}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', margin: 0 }}>{t('loginSubtitle')}</p>
         </div>
 
         {/* Toggle Switch */}
@@ -175,10 +189,10 @@ const Login = () => {
                 color: loginType === type ? 'white' : 'rgba(255,255,255,0.6)',
                 fontWeight: loginType === type ? '600' : '500',
                 boxShadow: loginType === type ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
-                cursor: 'pointer', transition: 'all 0.3s', textTransform: 'capitalize'
+                cursor: 'pointer', transition: 'all 0.3s'
               }}
             >
-              {type}
+              {t(type + 'Login')}
             </button>
           ))}
         </div>
@@ -186,7 +200,7 @@ const Login = () => {
         <form onSubmit={handleLogin} className="flex flex-col" style={{ gap: '1.5rem' }}>
           <div className="animate-fade-in" key={loginType + 'id'}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'white' }}>
-              {loginType === 'student' ? 'Student ID' : loginType === 'driver' ? 'Driver ID' : 'Admin ID'}
+              {loginType === 'student' ? t('studentId') : loginType === 'driver' ? t('driverId') : t('adminId')}
             </label>
             <div className="relative">
               <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }}>
@@ -194,7 +208,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
-                placeholder={`Enter ${loginType} ID`}
+                placeholder={loginType === 'student' ? t('enterStudentId') : loginType === 'driver' ? t('enterDriverId') : t('enterAdminId')}
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 required
@@ -207,16 +221,16 @@ const Login = () => {
               />
             </div>
           </div>
-
+ 
           <div className="animate-fade-in" key={loginType + 'pass'}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'white' }}>Password</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'white' }}>{t('password')}</label>
             <div className="relative">
               <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }}>
                 <Lock size={18} />
               </div>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter password"
+                placeholder={t('enterPassword')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -255,7 +269,7 @@ const Login = () => {
             backgroundColor: (isLocked || isLoading) ? 'rgba(255,255,255,0.2)' : (loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)'),
             color: 'white', border: 'none', cursor: (isLocked || isLoading) ? 'not-allowed' : 'pointer'
           }}>
-            {isLocked ? 'Locked' : (isLoading ? 'Logging in...' : 'Login')}
+            {isLocked ? t('locked') : (isLoading ? t('signingIn') : t('signIn'))}
             {!isLocked && !isLoading && <ArrowRight size={20} />}
           </button>
         </form>

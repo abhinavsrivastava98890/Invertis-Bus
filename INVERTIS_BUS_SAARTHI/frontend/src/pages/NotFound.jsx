@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { useLang } from '../context/LanguageContext';
 import '../index.css';
 
 const NotFound = () => {
+  const { t } = useLang();
+
   return (
     <div style={{
       height: '100vh',
@@ -27,9 +30,9 @@ const NotFound = () => {
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary-blue)', marginBottom: '1rem' }}>
           404
         </h1>
-        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Page Not Found</h2>
+        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>{t('pageNotFound')}</h2>
         <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
-          Oops! The page you are looking for doesn't exist or has been moved.
+          {t('pageNotFoundDesc')}
         </p>
         <Link to="/" style={{
           display: 'inline-block',
@@ -41,7 +44,7 @@ const NotFound = () => {
           fontWeight: '600',
           transition: 'transform 0.2s'
         }}>
-          Go Back Home
+          {t('goBackHome')}
         </Link>
       </div>
     </div>

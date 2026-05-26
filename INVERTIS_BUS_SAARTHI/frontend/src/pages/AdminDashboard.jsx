@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bus, Users, MapPin, Shield, LogOut, Settings, Bell, TrendingUp, AlertOctagon, CheckCircle2, MessageSquare, Trash2, UserPlus, Navigation, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LanguageContext';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -29,6 +30,32 @@ const busIcon = new L.Icon({
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { t } = useLang();
+
+  const formatTime = (createdAtStr) => {
+    if (!createdAtStr) return 'Just now';
+    const date = new Date(createdAtStr);
+    if (isNaN(date.getTime())) {
+      // If it's old mock data like '2 hours ago', return it directly
+      return createdAtStr;
+    }
+    
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   // State for Navigation
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, grievances
@@ -322,11 +349,11 @@ const AdminDashboard = () => {
       <div className="px-main" style={{ marginTop: '1rem', marginBottom: '0.25rem' }}>
         <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
           {[
-            { id: 'overview',    icon: <MapPin size={16} />,       label: 'Fleet',       color: '#0066cc', bg: '#e6f0fa' },
-            { id: 'routes',      icon: <Navigation size={16} />,   label: 'Routes',      color: '#28a745', bg: '#e6fae6' },
-            { id: 'users',       icon: <Users size={16} />,        label: 'Users',       color: '#7c3aed', bg: '#f3e8ff' },
-            { id: 'grievances',  icon: <MessageSquare size={16} />, label: 'Grievances', color: '#cf1322', bg: '#fff1f0' },
-            { id: 'attendance',  icon: <CheckCircle2 size={16} />, label: 'Attendance',  color: '#d97706', bg: '#fffbeb' },
+            { id: 'overview',    icon: <MapPin size={16} />,       label: t('fleet'),       color: '#0066cc', bg: '#e6f0fa' },
+            { id: 'routes',      icon: <Navigation size={16} />,   label: t('routes'),      color: '#28a745', bg: '#e6fae6' },
+            { id: 'users',       icon: <Users size={16} />,        label: t('users'),       color: '#7c3aed', bg: '#f3e8ff' },
+            { id: 'grievances',  icon: <MessageSquare size={16} />, label: t('grievances'), color: '#cf1322', bg: '#fff1f0' },
+            { id: 'attendance',  icon: <CheckCircle2 size={16} />, label: t('attendance'),  color: '#d97706', bg: '#fffbeb' },
           ].map(tab => {
             const isActive = activeTab === tab.id;
             return (
@@ -652,7 +679,7 @@ const AdminDashboard = () => {
                     <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>
                       <span style={{ color: 'var(--primary-blue)' }}>{comp.realName}</span> <span style={{ color: 'var(--text-light)', fontSize: '0.8rem', fontWeight: 'normal' }}>(ID: {comp.login_id})</span>
                     </h3>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{comp.route} â€¢ {comp.time}</p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{comp.route} • {formatTime(comp.created_at || comp.time)}</p>
                   </div>
                   <span style={{
                     fontSize: '0.75rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '8px',
@@ -803,7 +830,7 @@ const AdminDashboard = () => {
                   <div key={comp._id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <strong style={{ color: 'var(--primary-blue)' }}>{comp.realName} (ID: {comp.login_id})</strong>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>{comp.time}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>{formatTime(comp.created_at || comp.time)}</span>
                     </div>
                     <p style={{ margin: 0, color: 'var(--text-dark)' }}>{comp.text}</p>
                     {/* Media Attachment */}
