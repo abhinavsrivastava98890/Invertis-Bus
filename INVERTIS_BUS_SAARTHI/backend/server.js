@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
+const webpush = require('web-push');
 require('dotenv').config();
 
 const app = express();
@@ -44,6 +45,15 @@ const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || "supersecret_jwt_key_bus_saarthi_2025";
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'invertis_hardware_secret_2026';
 
+// --- Web Push Configuration ---
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:admin@invertisbus.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
 // --- MongoDB Connection ---
 mongoose.connect(process.env.MONGODB_URI, {
   dbName: process.env.DATABASE_NAME || 'bus_management_db'
@@ -59,7 +69,12 @@ const UserSchema = new mongoose.Schema({
   route_id: String,
   fee_status: String,
   phone: String,
-  profile_pic: String
+  profile_pic: String,
+  location: {
+    lat: Number,
+    lng: Number
+  },
+  wake_alarm_enabled: { type: Boolean, default: false }
 });
 const User = mongoose.model('User', UserSchema);
 
@@ -105,6 +120,13 @@ const LeaveSchema = new mongoose.Schema({
   date: { type: String, required: true }
 });
 const Leave = mongoose.model('Leave', LeaveSchema);
+
+const PushSubscriptionSchema = new mongoose.Schema({
+  login_id: { type: String, required: true },
+  subscription: { type: Object, required: true },
+  device_type: String
+});
+const PushSubscription = mongoose.model('PushSubscription', PushSubscriptionSchema);
 
 const Attendance = mongoose.model('Attendance', new mongoose.Schema({}, { strict: false }), 'attendance');
 
@@ -163,6 +185,34 @@ const verifyWebhook = (req, res, next) => {
     return res.status(403).json({ detail: "Hardware unauthorized" });
   }
   next();
+};
+
+const sendPushNotification = async (loginIdOrRole, payload) => {
+  try {
+    let users = [];
+    if (loginIdOrRole === 'admin') {
+      users = await User.find({ role: 'admin' });
+    } else {
+      users = [{ login_id: loginIdOrRole }];
+    }
+    
+    const loginIds = users.map(u => u.login_id);
+    const subscriptions = await PushSubscription.find({ login_id: { $in: loginIds } });
+    
+    for (const sub of subscriptions) {
+      try {
+        await webpush.sendNotification(sub.subscription, JSON.stringify(payload));
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await PushSubscription.findByIdAndDelete(sub._id);
+        } else {
+          console.error("Push Error:", err);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("sendPushNotification Error:", err);
+  }
 };
 
 // --- REST APIs ---
@@ -239,6 +289,19 @@ app.put('/api/users/:login_id', authenticateAdmin, async (req, res) => {
 app.delete('/api/users/:login_id', authenticateAdmin, async (req, res) => {
   try {
     await User.findOneAndDelete({ login_id: req.params.login_id });
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.put('/api/users/location', authenticateUser, async (req, res) => {
+  try {
+    const { lat, lng, wake_alarm_enabled } = req.body;
+    await User.findOneAndUpdate(
+      { login_id: req.user.login_id }, 
+      { location: { lat, lng }, wake_alarm_enabled }
+    );
     res.json({ status: "success" });
   } catch (err) {
     res.status(500).json({ detail: err.message });
@@ -397,7 +460,16 @@ app.post('/api/grievance', authenticateUser, async (req, res) => {
 
 app.put('/api/grievance/:id/resolve', authenticateAdmin, async (req, res) => {
   try {
-    await Grievance.findByIdAndUpdate(req.params.id, { status: 'resolved' });
+    const updatedGrievance = await Grievance.findByIdAndUpdate(req.params.id, { status: 'resolved' }, { new: true });
+    
+    if (updatedGrievance) {
+      await sendPushNotification(updatedGrievance.login_id, {
+        title: '✅ Grievance Resolved',
+        body: `Your grievance regarding route ${updatedGrievance.route} has been marked as resolved.`,
+        url: '/profile'
+      });
+    }
+
     res.json({ status: "success" });
   } catch (err) {
     res.status(500).json({ detail: err.message });
@@ -429,6 +501,13 @@ app.post('/api/sos', authenticateUser, async (req, res) => {
     await sos.save();
     
     io.emit("sos_alert", { ...payload, _id: sos._id });
+    
+    await sendPushNotification('admin', {
+      title: '🚨 SOS ALERT',
+      body: `Student ${payload.student || req.user.name} triggered an SOS on route ${payload.route}`,
+      url: '/admin-dashboard'
+    });
+    
     res.json({ status: "success", id: sos._id });
   } catch (err) {
     res.status(500).json({ detail: err.message });
@@ -488,6 +567,25 @@ app.post('/api/leave', authenticateUser, async (req, res) => {
       await leave.save();
       res.json({ status: "success", action: "marked" });
     }
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.post('/api/push/subscribe', authenticateUser, async (req, res) => {
+  try {
+    const { subscription, device_type } = req.body;
+    
+    const existing = await PushSubscription.findOne({ 'subscription.endpoint': subscription.endpoint });
+    if (!existing) {
+      const newSub = new PushSubscription({
+        login_id: req.user.login_id,
+        subscription,
+        device_type: device_type || 'web'
+      });
+      await newSub.save();
+    }
+    res.json({ status: "success" });
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }
