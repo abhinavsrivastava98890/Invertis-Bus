@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bus, Users, MapPin, Shield, LogOut, Settings, Bell, TrendingUp, AlertOctagon, CheckCircle2, MessageSquare, Trash2, UserPlus, Navigation, Plus } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Bus, Users, MapPin, Shield, LogOut, Settings, Bell, TrendingUp, AlertOctagon, CheckCircle2, MessageSquare, Trash2, UserPlus, Navigation, Plus, Camera, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LanguageContext';
@@ -81,6 +81,62 @@ const AdminDashboard = () => {
 
   // Specific Route Complaints Modal
   const [showRouteComplaintsModal, setShowRouteComplaintsModal] = useState(false);
+
+  // Face Registration Modal
+  const [showFaceModal, setShowFaceModal] = useState(false);
+  const [faceUser, setFaceUser] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const openFaceCapture = async (u) => {
+    setFaceUser(u);
+    setShowFaceModal(true);
+    // Give modal time to render video element
+    setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      } catch (err) {
+        toast.error('Camera access denied or unavailable.');
+      }
+    }, 300);
+  };
+
+  const closeFaceCapture = () => {
+    setShowFaceModal(false);
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const captureAndUploadFace = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const context = canvasRef.current.getContext('2d');
+    canvasRef.current.width = videoRef.current.videoWidth || 640;
+    canvasRef.current.height = videoRef.current.videoHeight || 480;
+    context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+    
+    canvasRef.current.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('file', blob, 'capture.jpg');
+      formData.append('login_id', faceUser.login_id);
+      
+      const tId = toast.loading('Generating Face Encoding in Cloud...');
+      try {
+        const res = await axios.post(`${BACKEND_URL}/api/admin/users/register-face`, formData, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        toast.success(res.data.message || 'Face registered and synced successfully!', { id: tId });
+        closeFaceCapture();
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Face encoding failed', { id: tId });
+      }
+    }, 'image/jpeg', 0.95);
+  };
 
   // Route Management State
   const [routesList, setRoutesList] = useState([]);
@@ -664,6 +720,11 @@ const AdminDashboard = () => {
                         <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
                           <button onClick={() => openEditUser(u)} style={{ border: 'none', background: 'none', color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 'bold' }}>Edit</button>
                           <button onClick={() => handleDeleteUser(u.login_id)} style={{ border: 'none', background: 'none', color: '#cf1322', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                          {u.role === 'student' && (
+                            <button onClick={() => openFaceCapture(u)} style={{ border: 'none', background: 'none', color: '#28a745', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <Camera size={14} /> Face ID
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -956,6 +1017,45 @@ const AdminDashboard = () => {
                 <button type="submit" style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: 'var(--primary-blue)', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>{editingUser ? 'Update' : 'Create'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Face ID Capture Modal */}
+      {showFaceModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-slide-up glass p-glass" style={{ width: '100%', maxWidth: '500px', borderRadius: '20px', backgroundColor: 'var(--card-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Camera color="var(--primary-blue)" /> Register Face
+              </h2>
+              <button onClick={closeFaceCapture} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            <p style={{ color: 'var(--text-light)', marginBottom: '1rem', textAlign: 'center' }}>
+              Capturing face for <strong>{faceUser?.name} ({faceUser?.login_id})</strong>.<br/>
+              Ensure good lighting and direct eye contact.
+            </p>
+            
+            <div style={{ width: '100%', backgroundColor: 'black', borderRadius: '12px', overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}>
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              ></video>
+              <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+              
+              {/* Overlay targeting frame */}
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '200px', height: '250px', border: '2px dashed rgba(255,255,255,0.7)', borderRadius: '50%' }}></div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', width: '100%' }}>
+              <button onClick={closeFaceCapture} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
+              <button onClick={captureAndUploadFace} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: '#28a745', color: 'white', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <Camera size={18} /> Capture & Save
+              </button>
+            </div>
           </div>
         </div>
       )}

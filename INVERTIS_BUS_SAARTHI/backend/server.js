@@ -9,6 +9,9 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary-v2');
 const multer = require('multer');
 const webpush = require('web-push');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 require('dotenv').config();
 
 const app = express();
@@ -156,6 +159,10 @@ const TelemetrySchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 const Telemetry = mongoose.model('Telemetry', TelemetrySchema);
+
+const Encoding = mongoose.model('Encoding', new mongoose.Schema({}, { strict: false }), 'encodings');
+
+const localUpload = multer({ dest: 'uploads/' });
 
 // --- WebSocket Handling ---
 io.on('connection', (socket) => {
@@ -342,6 +349,50 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }
+});
+
+app.post('/api/admin/users/register-face', authenticateAdmin, localUpload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ detail: "No file uploaded" });
+  const login_id = req.body.login_id;
+  if (!login_id) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ detail: "Missing login_id" });
+  }
+
+  const imagePath = path.resolve(req.file.path);
+  const scriptPath = path.resolve(__dirname, 'generate_encoding.py');
+  
+  exec(`python "${scriptPath}" "${imagePath}"`, async (error, stdout, stderr) => {
+    fs.unlink(imagePath, () => {});
+
+    if (error) {
+      console.error('Python execution error:', error);
+      return res.status(500).json({ detail: 'Failed to generate face encoding.' });
+    }
+    
+    try {
+      const result = JSON.parse(stdout.trim());
+      if (result.success) {
+        await Encoding.findOneAndUpdate(
+          { student_id: login_id },
+          {
+            student_id: login_id,
+            embedding: result.encoding,
+            quality_score: 0.98,
+            source: 'admin_web_capture',
+            created_at: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        res.json({ status: "success", message: "Face registered successfully!" });
+      } else {
+        res.status(400).json({ detail: result.error });
+      }
+    } catch (err) {
+      console.error('Failed to parse python output:', err, stdout);
+      res.status(500).json({ detail: 'Invalid encoding generation output.' });
+    }
+  });
 });
 
 app.put('/api/users/location', authenticateUser, async (req, res) => {
