@@ -76,7 +76,10 @@ const AdminDashboard = () => {
       transports: ['websocket', 'polling']
     });
 
-    socket.on('connect', () => console.log('Admin connected to socket server'));
+    socket.on('connect', () => {
+      console.log('Admin connected to socket server');
+      socket.emit('join_admin');
+    });
 
     socket.on('sos_alert', (data) => {
       const newAlert = {

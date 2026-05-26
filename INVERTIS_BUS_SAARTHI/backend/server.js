@@ -168,6 +168,11 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('join_admin', () => {
+    socket.join('admin_room');
+    console.log(`Socket ${socket.id} joined admin_room`);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
@@ -426,6 +431,19 @@ app.delete('/api/routes/:route_id', authenticateAdmin, async (req, res) => {
 
 const loginAttempts = new Map();
 
+// Periodic cleanup to prevent Memory Leaks from brute force IP attacks
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of loginAttempts.entries()) {
+    if (record.blockUntil && now > record.blockUntil) {
+      loginAttempts.delete(ip);
+    } else if (!record.blockUntil) {
+      // Clear entries that didn't reach block threshold to free memory
+      loginAttempts.delete(ip);
+    }
+  }
+}, 15 * 60 * 1000); // 15 mins
+
 function handleFailedLogin(ip) {
   const record = loginAttempts.get(ip) || { count: 0, blockUntil: null };
   record.count += 1;
@@ -529,7 +547,13 @@ app.get('/api/admin/grievances', async (req, res) => {
 
 app.post('/api/grievance', authenticateUser, async (req, res) => {
   try {
-    const payload = { ...req.body, created_at: new Date(), status: 'pending', upvotes: 0 };
+    const payload = { 
+      ...req.body, 
+      created_at: new Date(), 
+      status: 'pending', 
+      upvotes: 0,
+      upvotedBy: []
+    };
     const grievance = new Grievance(payload);
     await grievance.save();
     res.json({ status: "success", id: grievance._id });
@@ -601,13 +625,23 @@ app.delete('/api/grievance/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+const sosAttempts = new Map();
+
 app.post('/api/sos', authenticateUser, async (req, res) => {
   try {
+    const login_id = req.user.login_id;
+    const lastSos = sosAttempts.get(login_id);
+    if (lastSos && Date.now() - lastSos < 30000) {
+      return res.status(429).json({ detail: "SOS already triggered. Help is on the way." });
+    }
+    sosAttempts.set(login_id, Date.now());
+
     const payload = { ...req.body, time: new Date() };
     const sos = new SosAlert(payload);
     await sos.save();
     
-    io.emit("sos_alert", { ...payload, _id: sos._id });
+    // Privacy Fix: Only emit to admin room, not globally
+    io.to('admin_room').emit("sos_alert", { ...payload, _id: sos._id });
     
     await sendPushNotification('admin', {
       title: '🚨 SOS ALERT',
