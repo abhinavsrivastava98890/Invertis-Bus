@@ -215,6 +215,45 @@ const sendPushNotification = async (loginIdOrRole, payload) => {
   }
 };
 
+// --- Haversine Distance (meters) ---
+const haversineDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371000; // Earth radius in meters
+  const toRad = (deg) => deg * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// --- Check wake alarms for students on a route ---
+const checkWakeAlarms = async (route_id, busLat, busLng) => {
+  try {
+    if (!busLat || !busLng) return;
+    const students = await User.find({
+      role: 'student',
+      route_id: String(route_id),
+      wake_alarm_enabled: true,
+      'location.lat': { $exists: true },
+      'location.lng': { $exists: true }
+    });
+    for (const student of students) {
+      const dist = haversineDistance(busLat, busLng, student.location.lat, student.location.lng);
+      if (dist <= 2000) { // 2 km
+        await sendPushNotification(student.login_id, {
+          title: '⏰ Wake Up! Bus is Near',
+          body: `Your bus on Route ${route_id} is ${Math.round(dist / 100) / 10} km away. Get ready!`,
+          url: '/'
+        });
+        // Disable after firing so it doesn't spam
+        await User.findOneAndUpdate({ login_id: student.login_id }, { wake_alarm_enabled: false });
+      }
+    }
+  } catch (err) {
+    console.error('Wake alarm check error:', err);
+  }
+};
+
 // --- REST APIs ---
 
 app.post('/api/upload', authenticateUser, upload.single('file'), (req, res) => {
@@ -297,10 +336,23 @@ app.delete('/api/users/:login_id', authenticateAdmin, async (req, res) => {
 
 app.put('/api/users/location', authenticateUser, async (req, res) => {
   try {
-    const { lat, lng, wake_alarm_enabled } = req.body;
+    const { lat, lng } = req.body;
     await User.findOneAndUpdate(
       { login_id: req.user.login_id }, 
-      { location: { lat, lng }, wake_alarm_enabled }
+      { location: { lat, lng } }
+    );
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.put('/api/users/wake_alarm', authenticateUser, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    await User.findOneAndUpdate(
+      { login_id: req.user.login_id },
+      { wake_alarm_enabled: enabled }
     );
     res.json({ status: "success" });
   } catch (err) {
@@ -632,6 +684,9 @@ app.post('/api/internal/telemetry', verifyWebhook, async (req, res) => {
     comfort: comfortStatus,
     location: { lat: data.latitude, lng: data.longitude }
   });
+
+  // Check wake alarms for students near the bus
+  checkWakeAlarms(route_id, data.latitude, data.longitude);
   
   res.status(200).json({ status: "forwarded" });
 });
@@ -666,6 +721,9 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
       comfort: comfortStatus,
       location: { lat: data.latitude, lng: data.longitude }
     });
+
+    // Check wake alarms for students near the bus
+    checkWakeAlarms(route_id, data.latitude, data.longitude);
   } else if (type === 'attendance') {
     const route_id = data.route_id || '4';
     

@@ -33,7 +33,8 @@ const Home = () => {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [telemetry, setTelemetry] = useState(null);
   const [isNotBoarding, setIsNotBoarding] = useState(false);
-  const [alarmSet, setAlarmSet] = useState(false);
+  const [alarmSet, setAlarmSet] = useState(() => localStorage.getItem('wake_alarm_enabled') === 'true');
+  const [alarmLoading, setAlarmLoading] = useState(false);
   const [sosActive, setSosActive] = useState(false);
   const [sosTimer, setSosTimer] = useState(null);
 
@@ -183,19 +184,54 @@ const Home = () => {
     fetchRouteInfo();
   }, [user]);
 
-  // Handle fake alarm trigger logic for demonstration
-  useEffect(() => {
-    if (alarmSet && busLocation[0] !== 28.3180) {
-      const dist = Math.abs(busLocation[0] - 28.3500);
-      if (dist < 0.005) {
-        toast("Wake Up! Your bus is arriving soon!");
+  // Wake Alarm toggle - saves GPS once, then toggles on backend
+  const handleWakeAlarm = async () => {
+    if (alarmLoading) return;
+    setAlarmLoading(true);
+    try {
+      const token = user?.token || localStorage.getItem('token');
+      if (!alarmSet) {
+        // Check if location already saved
+        const hasLocation = localStorage.getItem('location_saved') === 'true';
+        if (!hasLocation) {
+          // First time: get GPS and save it
+          const pos = await new Promise((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+          );
+          await axios.put(`${BACKEND_URL}/api/users/location`, {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          }, { headers: { Authorization: `Bearer ${token}` } });
+          localStorage.setItem('location_saved', 'true');
+        }
+        // Enable wake alarm on backend
+        await axios.put(`${BACKEND_URL}/api/users/wake_alarm`,
+          { enabled: true },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setAlarmSet(true);
+        localStorage.setItem('wake_alarm_enabled', 'true');
+        toast.success("Alarm set! You'll be notified when the bus is 2km away.");
+      } else {
+        // Disable on backend
+        await axios.put(`${BACKEND_URL}/api/users/wake_alarm`,
+          { enabled: false },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setAlarmSet(false);
-        try {
-          new Audio('https://www.soundjay.com/buttons/beep-07.mp3').play();
-        } catch (e) { }
+        localStorage.setItem('wake_alarm_enabled', 'false');
+        toast('Wake alarm turned off.', { icon: '🔕' });
       }
+    } catch (err) {
+      if (err.code === 1) {
+        toast.error('Location permission denied. Enable it in browser settings.');
+      } else {
+        toast.error('Failed to set alarm. Check your connection.');
+      }
+    } finally {
+      setAlarmLoading(false);
     }
-  }, [busLocation, alarmSet]);
+  };
 
   const startSosCountdown = () => {
     setSosTimer(10);
@@ -346,20 +382,19 @@ const Home = () => {
           </button>
 
           <button
-            onClick={() => {
-              setAlarmSet(!alarmSet);
-              if (!alarmSet) toast.success("Alarm set! You'll be notified 2km before your stop.");
-            }}
+            onClick={handleWakeAlarm}
+            disabled={alarmLoading}
             style={{
               flex: 1, minWidth: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               backgroundColor: alarmSet ? '#e6f0fa' : 'var(--white)',
               color: alarmSet ? 'var(--primary-blue)' : 'var(--text-dark)',
               padding: '1rem 0.25rem', borderRadius: '12px', border: alarmSet ? '2px solid var(--primary-blue)' : '2px solid transparent',
-              fontWeight: '600', boxShadow: 'var(--shadow)', transition: 'all 0.2s', cursor: 'pointer', fontSize: '0.85rem'
+              fontWeight: '600', boxShadow: 'var(--shadow)', transition: 'all 0.2s', cursor: alarmLoading ? 'wait' : 'pointer', fontSize: '0.85rem',
+              opacity: alarmLoading ? 0.7 : 1
             }}
           >
             <AlarmClock size={16} color={alarmSet ? 'var(--primary-blue)' : 'var(--text-light)'} />
-            {alarmSet ? 'Alarm ON' : 'Wake Alarm'}
+            {alarmLoading ? 'Setting...' : alarmSet ? 'Alarm ON' : 'Wake Alarm'}
           </button>
 
           <button
