@@ -643,6 +643,23 @@ const AdminDashboard = () => {
                 </div>
                 <p style={{ margin: 0, fontSize: '1rem', color: 'var(--text-dark)' }}>{comp.text}</p>
 
+                {/* Media Attachment */}
+                {comp.type === 'photo' && comp.media_url && (
+                  <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
+                    <img src={comp.media_url} alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'cover' }} />
+                  </div>
+                )}
+                {comp.type === 'video' && comp.media_url && (
+                  <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <video src={comp.media_url} controls style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'cover' }} />
+                  </div>
+                )}
+                {comp.type === 'audio' && comp.media_url && (
+                  <div style={{ marginTop: '0.5rem', padding: '1rem', backgroundColor: 'var(--bg-color)', borderRadius: '30px', border: '1px solid var(--border-color)' }}>
+                    <audio src={comp.media_url} controls style={{ width: '100%' }} />
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid #f0f0f0', paddingTop: '1rem', marginTop: '0.5rem' }}>
                   {comp.status === 'pending' && (
                     <button onClick={() => handleResolveGrievance(comp._id)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
