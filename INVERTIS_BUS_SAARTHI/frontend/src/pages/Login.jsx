@@ -86,19 +86,65 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative p-4" style={{ backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
+    <div className="min-h-screen flex items-center justify-center relative p-4" style={{ backgroundColor: '#000', overflow: 'hidden' }}>
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 0,
+          opacity: 0.6
+        }}
+      >
+        <source src="https://www.invertisuniversity.ac.in/uploads/banner/20251029150922.mp4" type="video/mp4" />
+      </video>
+
+      {/* Dark overlay for readability */}
       <div style={{
-        position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px',
-        borderRadius: '50%', background: 'var(--primary-blue)', opacity: '0.1', filter: 'blur(40px)'
-      }}></div>
-      <div style={{
-        position: 'absolute', bottom: '-10%', right: '-10%', width: '300px', height: '300px',
-        borderRadius: '50%', background: 'var(--secondary-orange)', opacity: '0.1', filter: 'blur(40px)'
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%)',
+        zIndex: 1
       }}></div>
 
-      <div className="glass animate-slide-up p-login" style={{
-        width: '100%', maxWidth: '450px', /* padding handled by p-login */
-        borderRadius: '20px', zIndex: 1, margin: '0 1rem'
+      {/* Invertis Ribbon Header */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 10,
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderTop: '6px solid #333333',
+        borderBottom: '4px solid var(--secondary-orange)',
+        padding: '0.75rem 5%',
+        display: 'flex',
+        alignItems: 'center',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+      }}>
+        <img 
+          src="https://invertis-feedback-system-2.onrender.com/main%20logo.png" 
+          alt="Invertis University" 
+          style={{ height: '45px', maxHeight: '45px', objectFit: 'contain' }}
+        />
+      </div>
+
+      <div className="animate-slide-up p-login relative" style={{
+        width: '100%', maxWidth: '450px',
+        borderRadius: '20px', zIndex: 2, margin: '80px 1rem 0 1rem',
+        background: 'rgba(255, 255, 255, 0.12)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
       }}>
         <div className="flex flex-col items-center" style={{ marginBottom: '1.25rem' }}>
           <div style={{
@@ -109,13 +155,13 @@ const Login = () => {
           }}>
             {loginType === 'admin' ? <Shield size={32} color="white" /> : loginType === 'driver' ? <Car size={32} color="white" /> : <Bus size={32} color="white" />}
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary-blue)', margin: 0, lineHeight: 1.2 }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-light)', margin: 0 }}>Login to your account</p>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', margin: 0, lineHeight: 1.2 }}>Welcome Back</h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', margin: 0 }}>Login to your account</p>
         </div>
 
         {/* Toggle Switch */}
         <div style={{
-          display: 'flex', backgroundColor: '#e9ecef', borderRadius: '12px', padding: '4px', marginBottom: '2rem'
+          display: 'flex', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '4px', marginBottom: '2rem'
         }}>
           {['student', 'driver', 'admin'].map((type) => (
             <button
@@ -124,10 +170,10 @@ const Login = () => {
               onClick={() => { setLoginType(type); setUserId(''); setPassword(''); }}
               style={{
                 flex: 1, padding: '0.75rem 0.25rem', borderRadius: '10px', border: 'none',
-                backgroundColor: loginType === type ? 'white' : 'transparent',
-                color: loginType === type ? (type === 'admin' ? 'var(--secondary-orange)' : type === 'driver' ? '#28a745' : 'var(--primary-blue)') : 'var(--text-light)',
+                backgroundColor: loginType === type ? 'rgba(255,255,255,0.25)' : 'transparent',
+                color: loginType === type ? 'white' : 'rgba(255,255,255,0.6)',
                 fontWeight: loginType === type ? '600' : '500',
-                boxShadow: loginType === type ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                boxShadow: loginType === type ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
                 cursor: 'pointer', transition: 'all 0.3s', textTransform: 'capitalize'
               }}
             >
@@ -138,11 +184,11 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="flex flex-col" style={{ gap: '1.5rem' }}>
           <div className="animate-fade-in" key={loginType + 'id'}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'var(--text-dark)' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
               {loginType === 'student' ? 'Student ID' : loginType === 'driver' ? 'Driver ID' : 'Admin ID'}
             </label>
             <div className="relative">
-              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}>
+              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)' }}>
                 <User size={18} />
               </div>
               <input
@@ -153,17 +199,19 @@ const Login = () => {
                 required
                 style={{
                   width: '100%', padding: '1rem 1rem 1rem 3rem',
-                  borderRadius: '12px', border: '1px solid var(--border-color)',
-                  fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s'
+                  borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)',
+                  fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s',
+                  background: 'rgba(255,255,255,0.1)', color: 'white',
+                  backdropFilter: 'blur(4px)'
                 }}
               />
             </div>
           </div>
 
           <div className="animate-fade-in" key={loginType + 'pass'}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'var(--text-dark)' }}>Password</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Password</label>
             <div className="relative">
-              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}>
+              <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)' }}>
                 <Lock size={18} />
               </div>
               <input
@@ -174,8 +222,10 @@ const Login = () => {
                 required
                 style={{
                   width: '100%', padding: '1rem 1rem 1rem 3rem',
-                  borderRadius: '12px', border: '1px solid var(--border-color)',
-                  fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s'
+                  borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)',
+                  fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s',
+                  background: 'rgba(255,255,255,0.1)', color: 'white',
+                  backdropFilter: 'blur(4px)'
                 }}
               />
             </div>
@@ -183,8 +233,8 @@ const Login = () => {
 
           {errorMessage && (
             <div className="animate-fade-in" style={{
-              color: '#cf1322', backgroundColor: '#fff1f0', padding: '0.75rem', borderRadius: '8px', 
-              fontSize: '0.85rem', fontWeight: '500', marginTop: '0.5rem', textAlign: 'center', border: '1px solid #ffa39e'
+              color: '#ff6b6b', backgroundColor: 'rgba(207,19,34,0.15)', padding: '0.75rem', borderRadius: '8px', 
+              fontSize: '0.85rem', fontWeight: '500', marginTop: '0.5rem', textAlign: 'center', border: '1px solid rgba(255,99,99,0.3)'
             }}>
               {errorMessage}
             </div>
@@ -192,7 +242,7 @@ const Login = () => {
 
           <button type="submit" disabled={isLocked || isLoading} className={`btn hover-scale`} style={{
             marginTop: '1rem', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '1.1rem',
-            backgroundColor: (isLocked || isLoading) ? '#ccc' : (loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)'),
+            backgroundColor: (isLocked || isLoading) ? 'rgba(255,255,255,0.2)' : (loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)'),
             color: 'white', border: 'none', cursor: (isLocked || isLoading) ? 'not-allowed' : 'pointer'
           }}>
             {isLocked ? 'Locked' : (isLoading ? 'Logging in...' : 'Login')}
@@ -205,3 +255,4 @@ const Login = () => {
 };
 
 export default Login;
+
