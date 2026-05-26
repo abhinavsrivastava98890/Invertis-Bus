@@ -11,7 +11,11 @@ axios.interceptors.request.use((config) => {
     try {
       const user = JSON.parse(userStr);
       if (user && user.token) {
-        config.headers['Authorization'] = `Bearer ${user.token}`;
+        if (config.headers && typeof config.headers.set === 'function') {
+          config.headers.set('Authorization', `Bearer ${user.token}`);
+        } else {
+          config.headers['Authorization'] = `Bearer ${user.token}`;
+        }
       }
     } catch (e) {}
   }
@@ -21,12 +25,9 @@ axios.interceptors.request.use((config) => {
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        localStorage.removeItem('bus_saarthi_user');
-        window.location.href = '/login';
-      }
-    }
+    // Disabled aggressive auto-logout.
+    // If a specific route fails (like a 403 WAF block on Render), 
+    // it will now just return the error gracefully to the component instead of kicking you out.
     return Promise.reject(error);
   }
 );

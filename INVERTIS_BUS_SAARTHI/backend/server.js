@@ -337,28 +337,6 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/users/:login_id', authenticateAdmin, async (req, res) => {
-  try {
-    const payload = req.body;
-    if (payload.password) {
-      payload.password = await bcrypt.hash(payload.password, 10);
-    }
-    await User.findOneAndUpdate({ login_id: req.params.login_id }, payload);
-    res.json({ status: "success" });
-  } catch (err) {
-    res.status(500).json({ detail: err.message });
-  }
-});
-
-app.delete('/api/users/:login_id', authenticateAdmin, async (req, res) => {
-  try {
-    await User.findOneAndDelete({ login_id: req.params.login_id });
-    res.json({ status: "success" });
-  } catch (err) {
-    res.status(500).json({ detail: err.message });
-  }
-});
-
 app.put('/api/users/location', authenticateUser, async (req, res) => {
   try {
     const { lat, lng } = req.body;
@@ -379,6 +357,28 @@ app.put('/api/users/wake_alarm', authenticateUser, async (req, res) => {
       { login_id: req.user.login_id },
       { wake_alarm_enabled: enabled }
     );
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.put('/api/users/:login_id', authenticateAdmin, async (req, res) => {
+  try {
+    const payload = req.body;
+    if (payload.password) {
+      payload.password = await bcrypt.hash(payload.password, 10);
+    }
+    await User.findOneAndUpdate({ login_id: req.params.login_id }, payload);
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+app.delete('/api/users/:login_id', authenticateAdmin, async (req, res) => {
+  try {
+    await User.findOneAndDelete({ login_id: req.params.login_id });
     res.json({ status: "success" });
   } catch (err) {
     res.status(500).json({ detail: err.message });

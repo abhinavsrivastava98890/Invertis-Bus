@@ -189,7 +189,8 @@ const Home = () => {
     if (alarmLoading) return;
     setAlarmLoading(true);
     try {
-      const token = user?.token || localStorage.getItem('token');
+      const token = user?.token || (localStorage.getItem('bus_saarthi_user') ? JSON.parse(localStorage.getItem('bus_saarthi_user')).token : null);
+      
       if (!alarmSet) {
         // Check if location already saved
         const hasLocation = localStorage.getItem('location_saved') === 'true';
@@ -201,23 +202,23 @@ const Home = () => {
           await axios.put(`${BACKEND_URL}/api/users/location`, {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude
-          }, { headers: { Authorization: `Bearer ${token}` } });
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           localStorage.setItem('location_saved', 'true');
         }
         // Enable wake alarm on backend
-        await axios.put(`${BACKEND_URL}/api/users/wake_alarm`,
-          { enabled: true },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.put(`${BACKEND_URL}/api/users/wake_alarm`, { enabled: true }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setAlarmSet(true);
         localStorage.setItem('wake_alarm_enabled', 'true');
         toast.success("Alarm set! You'll be notified when the bus is 2km away.");
       } else {
         // Disable on backend
-        await axios.put(`${BACKEND_URL}/api/users/wake_alarm`,
-          { enabled: false },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.put(`${BACKEND_URL}/api/users/wake_alarm`, { enabled: false }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setAlarmSet(false);
         localStorage.setItem('wake_alarm_enabled', 'false');
         toast('Wake alarm turned off.', { icon: '🔕' });
@@ -226,7 +227,9 @@ const Home = () => {
       if (err.code === 1) {
         toast.error('Location permission denied. Enable it in browser settings.');
       } else {
-        toast.error('Failed to set alarm. Check your connection.');
+        const status = err.response?.status || 'Network Error';
+        const detail = err.response?.data?.detail || err.response?.data || err.message;
+        toast.error(`Failed to set alarm. (Error: ${status} - ${typeof detail === 'string' ? detail.substring(0, 30) : 'Unknown'})`);
       }
     } finally {
       setAlarmLoading(false);
