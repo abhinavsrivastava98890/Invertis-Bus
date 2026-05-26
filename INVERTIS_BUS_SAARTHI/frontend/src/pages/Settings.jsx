@@ -139,7 +139,7 @@ const Settings = () => {
     }
     setPassLoading(true);
     try {
-      await axios.put(`${BACKEND_URL}/api/users/${user?.id}/password`, {
+      await axios.put(`${BACKEND_URL}/api/users/${user?.login_id}/password`, {
         old_password: oldPass,
         new_password: newPass,
       }, {

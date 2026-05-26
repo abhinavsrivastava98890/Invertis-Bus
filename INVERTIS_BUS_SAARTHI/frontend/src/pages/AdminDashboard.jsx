@@ -319,30 +319,48 @@ const AdminDashboard = () => {
       </header>
 
       {/* Tabs */}
-      <div className="px-main" style={{ marginTop: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--border-color)', overflowX: 'auto' }}>
+      <div className="px-main" style={{ marginTop: '1rem', marginBottom: '0.25rem' }}>
+        <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
           {[
-            { id: 'overview', icon: <MapPin size={18} />, label: 'Fleet Overview' },
-            { id: 'routes', icon: <Navigation size={18} />, label: 'Route Management' },
-            { id: 'users', icon: <Users size={18} />, label: 'User Directory' },
-            { id: 'grievances', icon: <MessageSquare size={18} />, label: 'Grievance Portal' },
-            { id: 'attendance', icon: <CheckCircle2 size={18} />, label: 'Daily Attendance' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap',
-                padding: '0.75rem 1.5rem', background: 'none',
-                border: 'none', borderBottom: activeTab === tab.id ? '3px solid var(--primary-blue)' : '3px solid transparent',
-                color: activeTab === tab.id ? 'var(--primary-blue)' : 'var(--text-light)',
-                fontWeight: activeTab === tab.id ? 'bold' : '600',
-                cursor: 'pointer', transition: 'all 0.2s', marginBottom: '-2px'
-              }}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
+            { id: 'overview',    icon: <MapPin size={16} />,       label: 'Fleet',       color: '#0066cc', bg: '#e6f0fa' },
+            { id: 'routes',      icon: <Navigation size={16} />,   label: 'Routes',      color: '#28a745', bg: '#e6fae6' },
+            { id: 'users',       icon: <Users size={16} />,        label: 'Users',       color: '#7c3aed', bg: '#f3e8ff' },
+            { id: 'grievances',  icon: <MessageSquare size={16} />, label: 'Grievances', color: '#cf1322', bg: '#fff1f0' },
+            { id: 'attendance',  icon: <CheckCircle2 size={16} />, label: 'Attendance',  color: '#d97706', bg: '#fffbeb' },
+          ].map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                  padding: isActive ? '0.55rem 1.1rem' : '0.55rem 1rem',
+                  borderRadius: '50px',
+                  border: isActive ? `2px solid ${tab.color}` : '2px solid var(--border-color)',
+                  backgroundColor: isActive ? tab.bg : 'var(--white)',
+                  color: isActive ? tab.color : 'var(--text-light)',
+                  fontWeight: isActive ? '700' : '600',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isActive ? `0 2px 10px ${tab.color}33` : 'var(--shadow)',
+                }}
+              >
+                <span style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '24px', height: '24px', borderRadius: '50%',
+                  backgroundColor: isActive ? tab.color : 'var(--bg-color)',
+                  color: isActive ? 'white' : 'var(--text-light)',
+                  flexShrink: 0, transition: 'all 0.2s'
+                }}>
+                  {tab.icon}
+                </span>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

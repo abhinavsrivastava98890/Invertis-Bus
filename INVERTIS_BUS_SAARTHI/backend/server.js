@@ -381,6 +381,36 @@ app.put('/api/users/:login_id', authenticateAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/users/:login_id/password', authenticateUser, async (req, res) => {
+  try {
+    // Users can only change their own password
+    if (req.user.login_id !== req.params.login_id && req.user.role !== 'admin') {
+      return res.status(403).json({ detail: "Unauthorized" });
+    }
+    const { old_password, new_password } = req.body;
+    if (!old_password || !new_password) {
+      return res.status(400).json({ detail: "Missing old or new password" });
+    }
+    if (new_password.length < 6) {
+      return res.status(400).json({ detail: "New password must be at least 6 characters" });
+    }
+    const user = await User.findOne({ login_id: req.params.login_id }).select('+password');
+    if (!user) return res.status(404).json({ detail: "User not found" });
+
+    // Verify old password
+    const valid = user.password?.startsWith('$2b$')
+      ? await bcrypt.compare(String(old_password), user.password)
+      : user.password === old_password;
+    if (!valid) return res.status(401).json({ detail: "Old password is incorrect" });
+
+    user.password = await bcrypt.hash(new_password, 10);
+    await user.save();
+    res.json({ status: "success", message: "Password changed successfully" });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
 app.delete('/api/users/:login_id', authenticateAdmin, async (req, res) => {
   try {
     await User.findOneAndDelete({ login_id: req.params.login_id });

@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect, useRef } from 'react';
-import { Bus, Menu, MapPin, Phone, User, Maximize2, X, Compass, Activity, Navigation, Wind, AlertOctagon, CalendarOff, Bell, AlarmClock, Users } from 'lucide-react';
+import { Bus, Menu, MapPin, Phone, User, Maximize2, X, Compass, Activity, Navigation, Wind, AlertOctagon, Bell, AlarmClock, Users } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -32,7 +32,6 @@ const Home = () => {
   const [showMap, setShowMap] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [telemetry, setTelemetry] = useState(null);
-  const [isNotBoarding, setIsNotBoarding] = useState(false);
   const [alarmSet, setAlarmSet] = useState(() => localStorage.getItem('wake_alarm_enabled') === 'true');
   const [alarmLoading, setAlarmLoading] = useState(false);
   const [sosActive, setSosActive] = useState(false);
@@ -289,24 +288,6 @@ const Home = () => {
     startSosCountdown();
   };
 
-  const handleNotBoarding = async () => {
-    try {
-      const res = await axios.post(`${BACKEND_URL}/api/leave`, {
-        login_id: user?.id || 'Unknown',
-        route: user?.route_id || '4'
-      });
-
-      if (res.data.action === 'marked') {
-        setIsNotBoarding(true);
-        toast.success("Leave marked! Driver notified.");
-      } else {
-        setIsNotBoarding(false);
-        toast.success("Leave cancelled. Be on time!");
-      }
-    } catch (err) {
-      toast.error("Failed to update leave status.");
-    }
-  };
 
   // Mock Route
   const routePolyline = [
@@ -398,20 +379,6 @@ const Home = () => {
           >
             <AlarmClock size={16} color={alarmSet ? 'var(--primary-blue)' : 'var(--text-light)'} />
             {alarmLoading ? 'Setting...' : alarmSet ? 'Alarm ON' : 'Wake Alarm'}
-          </button>
-
-          <button
-            onClick={handleNotBoarding}
-            style={{
-              flex: 1, minWidth: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              backgroundColor: isNotBoarding ? '#f8f9fa' : 'var(--white)',
-              color: isNotBoarding ? 'var(--text-light)' : 'var(--text-dark)',
-              padding: '1rem 0.25rem', borderRadius: '12px', border: isNotBoarding ? '2px solid #e0e0e0' : '2px solid transparent',
-              fontWeight: '600', boxShadow: 'var(--shadow)', transition: 'all 0.2s', cursor: 'pointer', fontSize: '0.85rem'
-            }}
-          >
-            <CalendarOff size={16} color={isNotBoarding ? 'var(--text-light)' : 'var(--secondary-orange)'} />
-            {isNotBoarding ? 'Leave Marked' : 'Not Boarding'}
           </button>
         </div>
 
@@ -606,8 +573,8 @@ const Home = () => {
                   {/* Bus Marker */}
                   <Marker position={busLocation} icon={busIcon}>
                     <Popup>
-                      <b>Bus UP 25 AB 1234</b><br />
-                      Speed: {telemetry.speed.toFixed(0)} km/h
+                      <b>Bus {routeInfo?.bus_number || 'UP 25 AB 1234'}</b><br />
+                      Speed: {telemetry ? telemetry.speed.toFixed(0) : 0} km/h
                     </Popup>
                   </Marker>
                   {/* Route Polyline */}
@@ -644,7 +611,7 @@ const Home = () => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               <Marker position={busLocation} icon={busIcon}>
-                <Popup><b>Bus UP 25 AB 1234</b><br />Speed: {telemetry.speed.toFixed(0)} km/h</Popup>
+                <Popup><b>Bus {routeInfo?.bus_number || 'UP 25 AB 1234'}</b><br />Speed: {telemetry ? telemetry.speed.toFixed(0) : 0} km/h</Popup>
               </Marker>
               <Polyline positions={routePolyline} color="var(--primary-blue)" weight={5} />
               <Marker position={routePolyline[3]}>

@@ -77,9 +77,10 @@ const Community = () => {
     }
 
     try {
+      const token = user?.token || JSON.parse(localStorage.getItem('bus_saarthi_user') || '{}').token;
       const payload = {
         realName: user?.name || 'Student User',
-        login_id: user?.id || 'Unknown',
+        login_id: user?.login_id || 'Unknown',
         text: newComplaintText,
         type: mediaFile ? mediaType : 'text',
         media_url: uploadedMediaUrl,
@@ -88,7 +89,7 @@ const Community = () => {
       };
 
       const response = await axios.post(`${BACKEND_URL}/api/grievance`, payload, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.data.status === 'success') {
