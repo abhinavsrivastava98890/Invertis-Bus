@@ -41,9 +41,9 @@ const DriverDashboard = () => {
 
   return (
     <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)' }}>
-      <header style={{
+      <header className="p-header" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1rem 2rem', backgroundColor: '#343a40', color: 'white',
+        backgroundColor: '#343a40', color: 'white',
         boxShadow: 'var(--shadow)'
       }}>
         <div>
@@ -60,7 +60,7 @@ const DriverDashboard = () => {
         </button>
       </header>
 
-      <main style={{ padding: '2rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+      <main className="p-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         
         {/* Big Action Button */}
         <button 
@@ -77,7 +77,7 @@ const DriverDashboard = () => {
         </button>
 
         {isTripActive && (
-          <div className="glass animate-slide-up" style={{ padding: '2rem', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass animate-slide-up p-glass" style={{ borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', paddingBottom: '1rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Navigation color="var(--primary-blue)" /> Route Progress
@@ -103,7 +103,7 @@ const DriverDashboard = () => {
           </div>
         )}
 
-        <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="glass p-glass" style={{ borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
              <Phone color="var(--secondary-orange)" size={24} />
              <div>

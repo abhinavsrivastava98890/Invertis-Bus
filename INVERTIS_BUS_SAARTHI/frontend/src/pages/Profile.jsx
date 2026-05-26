@@ -21,8 +21,8 @@ const Profile = () => {
   return (
     <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)', overflowY: 'auto' }}>
       {/* Header */}
-      <header style={{
-        padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      <header className="p-header" style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         backgroundColor: 'var(--primary-blue)', color: 'white', zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -63,7 +63,7 @@ const Profile = () => {
           </div>
         </div>
 
-        <div style={{ padding: '0 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="p-main" style={{ paddingTop: 0, display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
           
           <div style={{ textAlign: 'center' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-dark)', margin: '0 0 0.25rem 0' }}>
@@ -97,7 +97,7 @@ const Profile = () => {
 
           {/* Weekly Attendance (For Students) */}
           {user?.role === 'student' && (
-            <div className="glass animate-slide-up" style={{ padding: '1.5rem', borderRadius: '20px' }}>
+            <div className="glass animate-slide-up p-glass" style={{ borderRadius: '20px' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--primary-blue)' }}>Weekly Attendance</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {attendanceHistory.map((record, idx) => (
@@ -118,7 +118,7 @@ const Profile = () => {
           )}
 
           {/* Details Card */}
-          <div className="glass animate-slide-up" style={{ padding: '1.5rem', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="glass animate-slide-up p-glass" style={{ borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--primary-blue)' }}>Personal Details</h3>
               <button style={{ background: 'none', border: 'none', color: 'var(--secondary-orange)', fontWeight: 'bold', cursor: 'pointer' }}>Edit</button>

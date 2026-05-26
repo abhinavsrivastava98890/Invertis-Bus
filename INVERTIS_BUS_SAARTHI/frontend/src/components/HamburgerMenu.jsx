@@ -23,7 +23,7 @@ const HamburgerMenu = ({ isOpen, onClose }) => {
       />
       <div 
         style={{
-          position: 'fixed', top: 0, right: 0, height: '100vh',
+          position: 'fixed', top: 0, right: 0, bottom: 0,
           width: '70%', maxWidth: '350px', backgroundColor: 'var(--white)',
           boxShadow: 'var(--shadow-lg)', zIndex: 50,
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',

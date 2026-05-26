@@ -283,9 +283,9 @@ const AdminDashboard = () => {
   return (
     <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
       {/* Header */}
-      <header style={{
+      <header className="p-header" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1rem 2rem', backgroundColor: 'var(--white)', boxShadow: 'var(--shadow)', zIndex: 10
+        backgroundColor: 'var(--white)', boxShadow: 'var(--shadow)', zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ backgroundColor: 'var(--secondary-orange)', padding: '0.5rem', borderRadius: '10px' }}>
@@ -316,7 +316,7 @@ const AdminDashboard = () => {
       </header>
 
       {/* Tabs */}
-      <div style={{ padding: '0 2rem', marginTop: '1.5rem' }}>
+      <div className="px-main" style={{ marginTop: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--border-color)', overflowX: 'auto' }}>
           {[
             { id: 'overview', icon: <MapPin size={18} />, label: 'Fleet Overview' },
@@ -344,7 +344,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '2rem', overflowY: 'auto', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+      <main className="p-main" style={{ flex: 1, overflowY: 'auto', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
 
         {/* SOS Alerts View (Global) */}
         {sosAlerts.length > 0 && (
@@ -419,7 +419,7 @@ const AdminDashboard = () => {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'stretch' }}>
 
               {/* Left side: Map */}
-              <div className="glass" style={{ flex: '2 1 400px', borderRadius: '20px', overflow: 'hidden', minHeight: '400px', border: '2px solid var(--primary-blue)', position: 'relative', zIndex: 1 }}>
+              <div className="glass p-glass" style={{ flex: '1 1 280px', borderRadius: '20px', overflow: 'hidden', minHeight: '400px', border: '2px solid var(--primary-blue)', position: 'relative', zIndex: 1 }}>
                 <MapContainer center={busLocation} zoom={14} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -432,7 +432,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Right side: Stats for selected bus */}
-              <div style={{ flex: '1 1 250px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                   <div style={{ backgroundColor: '#e6f0fa', padding: '1rem', borderRadius: '12px', color: 'var(--primary-blue)' }}><Users size={28} /></div>
                   <div>
@@ -470,7 +470,7 @@ const AdminDashboard = () => {
 
             </div>
 
-            <div className="glass" style={{ padding: '2rem', borderRadius: '20px' }}>
+            <div className="glass p-glass" style={{ borderRadius: '20px' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)', marginBottom: '1.5rem' }}>Live Boarding Feed</h2>
               {liveAttendance.length === 0 ? (
                 <p style={{ color: 'var(--text-light)' }}>Waiting for students to board...</p>
@@ -495,7 +495,7 @@ const AdminDashboard = () => {
 
         {/* ----------------- TAB: ROUTES ----------------- */}
         {activeTab === 'routes' && (
-          <div className="animate-fade-in glass" style={{ padding: '2rem', borderRadius: '20px' }}>
+          <div className="animate-fade-in glass p-glass" style={{ borderRadius: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)' }}>Fleet & Route Management</h2>
               <button onClick={openAddRoute} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -547,7 +547,7 @@ const AdminDashboard = () => {
 
         {/* ----------------- TAB: USERS ----------------- */}
         {activeTab === 'users' && (
-          <div className="animate-fade-in glass" style={{ padding: '2rem', borderRadius: '20px' }}>
+          <div className="animate-fade-in glass p-glass" style={{ borderRadius: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)' }}>User Directory</h2>
               <button onClick={openAddUser} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -680,7 +680,7 @@ const AdminDashboard = () => {
           });
 
           return (
-            <div className="animate-fade-in glass" style={{ padding: '2rem', borderRadius: '20px' }}>
+            <div className="animate-fade-in glass p-glass" style={{ borderRadius: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-dark)' }}>Daily Attendance Logs</h2>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -786,7 +786,7 @@ const AdminDashboard = () => {
       {/* Add/Edit User Modal */}
       {showUserModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-slide-up glass" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--card-bg)' }}>
+          <div className="animate-slide-up glass p-glass" style={{ width: '100%', maxWidth: '500px', borderRadius: '20px', backgroundColor: 'var(--card-bg)' }}>
             <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-dark)' }}>{editingUser ? 'Edit User' : 'Add New User'}</h2>
             <form onSubmit={handleSaveUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
@@ -847,7 +847,7 @@ const AdminDashboard = () => {
       {/* Add/Edit Route Modal */}
       {showRouteModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-slide-up glass" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '20px', backgroundColor: 'var(--card-bg)' }}>
+          <div className="animate-slide-up glass p-glass" style={{ width: '100%', maxWidth: '500px', borderRadius: '20px', backgroundColor: 'var(--card-bg)' }}>
             <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-dark)' }}>{editingRoute ? 'Edit Route' : 'Add New Route'}</h2>
             <form onSubmit={handleSaveRoute} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', gap: '1rem' }}>

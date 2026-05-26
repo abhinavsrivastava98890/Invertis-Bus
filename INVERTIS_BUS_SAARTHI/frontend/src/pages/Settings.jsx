@@ -177,10 +177,10 @@ const Settings = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', transition: 'background 0.3s' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)', transition: 'background 0.3s' }}>
       {/* Header */}
-      <header style={{
-        padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem',
+      <header className="p-header" style={{
+        display: 'flex', alignItems: 'center', gap: '1rem',
         backgroundColor: 'var(--primary-blue)', color: 'white',
         boxShadow: '0 2px 12px rgba(0,86,179,0.3)',
       }}>
@@ -190,7 +190,7 @@ const Settings = () => {
         <h1 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>Settings</h1>
       </header>
 
-      <main style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
+      <main className="p-main" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
 
         {/* Profile Card */}
         <div style={{ ...sectionStyle, padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -306,7 +306,7 @@ const Settings = () => {
       {/* Change Password Modal */}
       {showPasswordModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ backgroundColor: 'var(--white)', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '420px', boxShadow: 'var(--shadow-lg)' }}>
+          <div className="p-glass" style={{ backgroundColor: 'var(--white)', borderRadius: '20px', width: '100%', maxWidth: '420px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-dark)' }}>Change Password</h2>
               <button onClick={() => setShowPasswordModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="var(--text-light)" /></button>
@@ -344,7 +344,7 @@ const Settings = () => {
       {/* Language Modal */}
       {showLangModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: 'var(--white)', borderRadius: '20px 20px 0 0', padding: '1.5rem', width: '100%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
+          <div className="p-glass" style={{ backgroundColor: 'var(--white)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>Select Language</h3>
               <button onClick={() => setShowLangModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="var(--text-light)" /></button>

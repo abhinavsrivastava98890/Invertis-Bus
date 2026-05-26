@@ -102,9 +102,9 @@ const Community = () => {
   return (
     <div className="h-screen flex flex-col relative" style={{ backgroundColor: 'var(--bg-color)' }}>
       {/* Header */}
-      <header style={{
+      <header className="p-header" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1.5rem', backgroundColor: 'var(--primary-blue)', color: 'white',
+        backgroundColor: 'var(--primary-blue)', color: 'white',
         boxShadow: 'var(--shadow)', zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -119,12 +119,12 @@ const Community = () => {
       </header>
 
       {/* Feed Area */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '6rem' }}>
+      <main className="p-main" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '6rem' }}>
         {isLoading ? (
           <div style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-light)' }}>Loading grievances...</div>
         ) : complaints.map((comp) => (
-          <div key={comp._id} className="glass animate-slide-up" style={{
-            padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '1rem'
+          <div key={comp._id} className="glass animate-slide-up p-glass" style={{
+            borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '1rem'
           }}>
             {/* Header of Post */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -235,9 +235,9 @@ const Community = () => {
           position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
           zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
         }}>
-          <div className="animate-slide-up" style={{
+          <div className="animate-slide-up p-glass" style={{
             backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '600px', borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
-            padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
+            display: 'flex', flexDirection: 'column', gap: '1.5rem',
             boxShadow: '0 -10px 40px rgba(0,0,0,0.2)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
