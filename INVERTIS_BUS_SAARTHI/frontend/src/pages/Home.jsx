@@ -341,10 +341,10 @@ const Home = () => {
             </button>
             {showNotifications && (
               <div className="glass animate-slide-up" style={{ position: 'absolute', top: '100%', right: 0, width: '250px', padding: '1rem', borderRadius: '12px', zIndex: 10, marginTop: '0.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0' }}>Notifications</h4>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-dark)' }}>Notifications</h4>
                 {latestNotice ? (
-                  <div style={{ padding: '0.5rem', backgroundColor: '#e6f0fa', borderRadius: '8px', fontSize: '0.85rem' }}>
-                    <strong>{latestNotice.title || 'Admin'}:</strong> {latestNotice.message}
+                  <div style={{ padding: '0.5rem', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-dark)' }}>
+                    <strong style={{ color: 'var(--primary-blue)' }}>{latestNotice.title || 'Admin'}:</strong> {latestNotice.message}
                   </div>
                 ) : (
                   <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)' }}>No new updates.</p>
