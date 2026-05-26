@@ -25,16 +25,19 @@ const Profile = () => {
     try {
       const res = await axios.post(`${BACKEND_URL}/api/upload/profile_pic`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       if (res.data.status === 'success') {
         setProfilePic(res.data.url);
         toast.success('Profile picture updated!', { id: loadingToast });
+      } else {
+        toast.error('Upload failed: ' + (res.data.detail || 'Unknown error'), { id: loadingToast });
       }
     } catch (err) {
-      toast.error('Failed to upload image.', { id: loadingToast });
+      const msg = err.response?.data?.detail || err.message || 'Network error';
+      toast.error('Failed to upload image: ' + msg, { id: loadingToast });
+      console.error('Profile pic upload error:', err.response?.data || err);
     }
   };
 

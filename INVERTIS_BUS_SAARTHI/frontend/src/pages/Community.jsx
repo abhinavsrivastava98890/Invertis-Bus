@@ -64,7 +64,6 @@ const Community = () => {
       try {
         const uploadRes = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
           headers: {
-            'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });

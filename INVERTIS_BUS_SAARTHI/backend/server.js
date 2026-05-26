@@ -6,7 +6,7 @@ const http = require('http');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary-v2');
 const multer = require('multer');
 const webpush = require('web-push');
 require('dotenv').config();
@@ -16,10 +16,21 @@ app.use(cors());
 app.use(express.json());
 
 // --- Cloudinary Configuration ---
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const cloudKey = process.env.CLOUDINARY_API_KEY;
+const cloudSecret = process.env.CLOUDINARY_API_SECRET;
+
+if (!cloudName || !cloudKey || !cloudSecret) {
+  console.warn('⚠️  WARNING: Cloudinary credentials are not set. File uploads will fail.');
+  console.warn('   Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET env vars.');
+} else {
+  console.log('✅ Cloudinary configured for cloud:', cloudName);
+}
+
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: cloudName,
+  api_key: cloudKey,
+  api_secret: cloudSecret
 });
 
 const storage = new CloudinaryStorage({
@@ -30,7 +41,10 @@ const storage = new CloudinaryStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+});
 
 
 const server = http.createServer(app);
@@ -256,28 +270,36 @@ const checkWakeAlarms = async (route_id, busLat, busLng) => {
 
 // --- REST APIs ---
 
-app.post('/api/upload', authenticateUser, upload.single('file'), (req, res) => {
-  try {
+app.post('/api/upload', authenticateUser, (req, res) => {
+  upload.single('file')(req, res, (multerErr) => {
+    if (multerErr) {
+      console.error('Multer/Cloudinary upload error:', multerErr);
+      return res.status(500).json({ detail: 'File upload failed: ' + multerErr.message });
+    }
     if (!req.file) {
       return res.status(400).json({ detail: "No file uploaded" });
     }
     res.json({ status: "success", url: req.file.path });
-  } catch (err) {
-    res.status(500).json({ detail: err.message });
-  }
+  });
 });
 
-app.post('/api/upload/profile_pic', authenticateUser, upload.single('file'), async (req, res) => {
-  try {
+app.post('/api/upload/profile_pic', authenticateUser, (req, res) => {
+  upload.single('file')(req, res, async (multerErr) => {
+    if (multerErr) {
+      console.error('Multer/Cloudinary profile pic error:', multerErr);
+      return res.status(500).json({ detail: 'File upload failed: ' + multerErr.message });
+    }
     if (!req.file) {
       return res.status(400).json({ detail: "No file uploaded" });
     }
-    // Update user profile pic in db
-    await User.findOneAndUpdate({ login_id: req.user.login_id }, { profile_pic: req.file.path });
-    res.json({ status: "success", url: req.file.path });
-  } catch (err) {
-    res.status(500).json({ detail: err.message });
-  }
+    try {
+      await User.findOneAndUpdate({ login_id: req.user.login_id }, { profile_pic: req.file.path });
+      res.json({ status: "success", url: req.file.path });
+    } catch (err) {
+      console.error('DB update error for profile pic:', err);
+      res.status(500).json({ detail: err.message });
+    }
+  });
 });
 
 app.get('/api/attendance', authenticateAdmin, async (req, res) => {
