@@ -257,27 +257,29 @@ class LiveRegistration:
             True if registration successful
         """
         print("\n" + "="*50)
-        print("STUDENT REGISTRATION")
+        print("STUDENT REGISTRATION (STRICT MODE)")
         print("="*50)
 
         # Get student information
         try:
-            name = input("Enter student name: ").strip()
-            if not name:
-                print("Name cannot be empty")
-                return False
-
-            student_id = input("Enter student ID: ").strip()
+            student_id = input("Enter student ID (login_id from Web App): ").strip()
             if not student_id:
                 print("Student ID cannot be empty")
                 return False
 
-            fee_status = input("Enter fee status (paid/unpaid) [default: unpaid]: ").strip().lower()
-            if fee_status not in ['paid', 'unpaid']:
-                fee_status = 'unpaid'
+            # Verify if student exists in database
+            student_record = database.get_student(student_id)
+            if not student_record:
+                print(f"\n[X] Error: Student ID '{student_id}' not found in local database!")
+                print("Please register the user in the Bus Saarthi Web App first and ensure the system is synced.")
+                return False
 
-            phone = input("Enter phone (optional): ").strip()
-            email = input("Enter email (optional): ").strip()
+            name = student_record.get('name', 'Unknown')
+            fee_status = student_record.get('fee_status', 'unpaid')
+            phone = student_record.get('phone', '')
+            email = student_record.get('email', '')
+
+            print(f"\n[OK] User Found! Registering face for: {name} (Fee Status: {fee_status.upper()})")
 
         except KeyboardInterrupt:
             print("\nRegistration cancelled")

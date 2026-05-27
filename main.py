@@ -16,6 +16,8 @@ Usage:
 
 import sys
 import argparse
+import config
+import asyncio
 from modules.utils import create_directories, log_message
 from modules.database import AttendanceDatabase
 
@@ -104,7 +106,6 @@ def main_cli():
     while True:
         print("\n" + "="*50)
         print("FACE RECOGNITION ATTENDANCE SYSTEM - CLI")
-        print("="*50)
         print("\n1. Register Student")
         print("2. Start Recognition")
         print("3. View Attendance")
@@ -114,10 +115,11 @@ def main_cli():
         print("7. System Statistics")
         print("8. Delete Student")
         print("9. Delete All Data (Wipe Database)")
-        print("10. Exit")
+        print("10. Sync Face Embeddings from MongoDB (Recovery)")
+        print("11. Exit")
         print("\n" + "-"*50)
 
-        choice = input("Enter choice (1-10): ").strip()
+        choice = input("Enter choice (1-11): ").strip()
 
         if choice == '1':
             from modules.registration import LiveRegistration
@@ -201,6 +203,14 @@ def main_cli():
                 print("Database wipe cancelled.")
 
         elif choice == '10':
+            from sync_mongo_to_local import sync as run_cloud_sync
+            print("\n[!] Triggering face database recovery sync...")
+            try:
+                asyncio.run(run_cloud_sync())
+            except Exception as e:
+                print(f"[X] Sync failed: {e}")
+
+        elif choice == '11':
             print("Exiting...")
             break
 
@@ -272,6 +282,21 @@ Examples:
         sync_worker.start()
     except Exception as e:
         log_message(f"Failed to start SyncWorker: {e}")
+
+    # Auto-recover face embeddings if the local database has 0 embeddings
+    try:
+        db_path = getattr(config, "DATABASE_PATH", "data/attendance.db")
+        db = AttendanceDatabase(db_path=db_path)
+        stats = db.get_statistics()
+        total_embeddings = stats.get('total_embeddings', 0)
+        db.close()
+        if total_embeddings == 0:
+            print("\n[!] Local face database is empty. Attempting auto-sync from MongoDB cloud...")
+            from sync_mongo_to_local import sync as run_cloud_sync
+            import asyncio
+            asyncio.run(run_cloud_sync())
+    except Exception as e:
+        log_message(f"Auto-sync check failed: {e}")
 
     # Handle arguments
     if args.setup:

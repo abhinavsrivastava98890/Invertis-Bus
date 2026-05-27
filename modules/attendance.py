@@ -195,11 +195,11 @@ class RealtimeAttendance:
                             # Determine color based on fee status
                             if fee_status == 'paid':
                                 color = (0, 255, 0)  # Green
-                                status_text = "✓ PAID - ACCESS GRANTED"
+                                status_text = "PAID - ACCESS GRANTED"
                                 text_color = (0, 255, 0)
                             else:
                                 color = (0, 0, 255)  # Red
-                                status_text = "✗ UNPAID - FEES PENDING"
+                                status_text = "UNPAID - FEES PENDING"
                                 text_color = (0, 0, 255)
 
                             # Draw bounding box
@@ -317,7 +317,7 @@ class RealtimeAttendance:
                                         )
                                         
                                         recognized_faces[student_id] = current_time
-                                        print(f"✓ Attendance logged: {name} ({student_id}) - {fee_status.upper()} (LIVE)")
+                                        print(f"[OK] Attendance logged: {name} ({student_id}) - {fee_status.upper()} (LIVE)")
 
                                         # Queue unpaid incident (if applicable)
                                         if fee_status == 'unpaid' and (current_time - self.last_unpaid_capture.get(student_id, 0) > 60):
