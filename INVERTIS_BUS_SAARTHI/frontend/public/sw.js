@@ -1,10 +1,17 @@
+self.addEventListener('install', function(event) {
+  self.skipWaiting(); // Force the waiting service worker to become the active service worker.
+});
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil(self.clients.claim()); // Tell the active service worker to take control of the page immediately.
+});
+
 self.addEventListener('push', function(event) {
   if (event.data) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/logo.png', // The main image shown next to the notification
-      badge: '/logo.png', // The tiny icon shown in the Android status bar
+      icon: '/bus-icon-192.png', // The main image shown next to the notification
       data: {
         url: data.url || '/'
       }
