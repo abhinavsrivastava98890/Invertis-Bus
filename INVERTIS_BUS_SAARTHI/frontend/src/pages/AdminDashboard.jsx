@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bus, Users, MapPin, Shield, LogOut, Settings, Bell, TrendingUp, AlertOctagon, CheckCircle2, MessageSquare, Trash2, UserPlus, Navigation, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -91,6 +91,8 @@ const AdminDashboard = () => {
   // Fleet Tracking State
   const [selectedRoute, setSelectedRoute] = useState('1');
   const [busLocation, setBusLocation] = useState([28.3180, 79.4670]);
+  const [isBusActive, setIsBusActive] = useState(false);
+  const telemetryTimeoutRef = useRef(null);
   const [socketInstance, setSocketInstance] = useState(null);
 
   // Global Broadcast State
@@ -149,6 +151,11 @@ const AdminDashboard = () => {
     socket.on('live_telemetry', (data) => {
       if (data.location && data.location.lat && data.location.lng) {
         setBusLocation([data.location.lat, data.location.lng]);
+        setIsBusActive(true);
+        if (telemetryTimeoutRef.current) clearTimeout(telemetryTimeoutRef.current);
+        telemetryTimeoutRef.current = setTimeout(() => {
+          setIsBusActive(false);
+        }, 15000);
       }
     });
 
@@ -160,6 +167,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (socketInstance) {
       socketInstance.emit('join_route', { route_id: selectedRoute });
+      setIsBusActive(false);
+      if (telemetryTimeoutRef.current) clearTimeout(telemetryTimeoutRef.current);
     }
   }, [selectedRoute, socketInstance]);
 
@@ -516,10 +525,14 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                  <div style={{ backgroundColor: '#e6fae6', padding: '1rem', borderRadius: '12px', color: '#28a745' }}><CheckCircle2 size={28} /></div>
+                  <div style={{ backgroundColor: isBusActive ? '#e6fae6' : '#fff1f0', padding: '1rem', borderRadius: '12px', color: isBusActive ? '#28a745' : '#cf1322' }}>
+                    {isBusActive ? <CheckCircle2 size={28} /> : <AlertOctagon size={28} />}
+                  </div>
                   <div>
                     <p style={{ color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '500', margin: 0 }}>Route Status</p>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#28a745', margin: 0 }}>Active & Running</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: isBusActive ? '#28a745' : '#cf1322', margin: 0 }}>
+                      {isBusActive ? 'Active & Running' : 'Offline'}
+                    </h3>
                   </div>
                 </div>
               </div>
