@@ -104,16 +104,16 @@ const Login = () => {
           height: '100%',
           objectFit: 'cover',
           zIndex: 0,
-          opacity: 0.6
+          opacity: 0.85
         }}
       >
         <source src="https://www.invertisuniversity.ac.in/uploads/banner/20251029150922.mp4" type="video/mp4" />
       </video>
 
-      {/* Dark overlay for readability */}
+      {/* Lightened overlay for better video visibility while keeping text readable */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%)',
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.3) 100%)',
         zIndex: 1
       }}></div>
 
@@ -136,7 +136,7 @@ const Login = () => {
         <img 
           src="https://invertis-feedback-system-2.onrender.com/main%20logo.png" 
           alt="Invertis University" 
-          style={{ height: '45px', maxHeight: '45px', objectFit: 'contain' }}
+          style={{ height: '65px', maxHeight: '65px', objectFit: 'contain' }}
         />
         <button 
           type="button"
