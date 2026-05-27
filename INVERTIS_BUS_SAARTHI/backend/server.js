@@ -14,6 +14,10 @@ const path = require('path');
 const { exec } = require('child_process');
 require('dotenv').config();
 
+if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+  fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -366,12 +370,22 @@ app.post('/api/admin/users/register-face', authenticateAdmin, localUpload.single
     fs.unlink(imagePath, () => {});
 
     if (error) {
-      console.error('Python execution error:', error);
-      return res.status(500).json({ detail: 'Failed to generate face encoding.' });
+      console.error('Python execution error:', error, stderr);
+      return res.status(500).json({ detail: stderr || 'Failed to generate face encoding (Python error).' });
     }
     
     try {
-      const result = JSON.parse(stdout.trim());
+      // In case python prints other logs, we find the JSON part
+      const outputStr = stdout.trim();
+      const jsonStart = outputStr.indexOf('{');
+      const jsonEnd = outputStr.lastIndexOf('}') + 1;
+      
+      if (jsonStart === -1 || jsonEnd === 0) {
+        throw new Error('No JSON object found in python output: ' + outputStr);
+      }
+      
+      const validJsonStr = outputStr.substring(jsonStart, jsonEnd);
+      const result = JSON.parse(validJsonStr);
       if (result.success) {
         await Encoding.findOneAndUpdate(
           { student_id: login_id },

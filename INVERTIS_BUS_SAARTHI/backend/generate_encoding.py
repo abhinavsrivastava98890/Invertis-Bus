@@ -1,5 +1,9 @@
 import sys
 import json
+import os
+
+# Suppress TensorFlow logging to avoid messing up JSON output
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import face_recognition
 
 def generate_encoding(image_path):
