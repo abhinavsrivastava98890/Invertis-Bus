@@ -3,7 +3,8 @@ self.addEventListener('push', function(event) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/vite.svg', // Fallback icon, change later if custom icon exists
+      icon: '/logo.png', // The main image shown next to the notification
+      badge: '/logo.png', // The tiny icon shown in the Android status bar
       data: {
         url: data.url || '/'
       }
