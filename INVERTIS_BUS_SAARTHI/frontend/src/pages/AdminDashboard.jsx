@@ -531,7 +531,7 @@ const AdminDashboard = () => {
                   <div>
                     <p style={{ color: 'var(--text-light)', fontSize: '0.85rem', fontWeight: '500', margin: 0 }}>Route Status</p>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: isBusActive ? '#28a745' : '#cf1322', margin: 0 }}>
-                      {isBusActive ? 'Active & Running' : 'Offline'}
+                      {isBusActive ? 'Active & Running' : 'Inactive'}
                     </h3>
                   </div>
                 </div>
