@@ -361,7 +361,16 @@ html, body, #root {
   .p-main { padding: 1rem; }
   .px-main { padding-left: 1rem; padding-right: 1rem; }
   .p-glass { padding: 1.25rem; }
-  .p-login { padding: 2rem 1.25rem; }
+  
+  /* Make Login Card more compact on mobile */
+  .p-login { 
+    padding: 1.5rem 1.25rem; 
+    margin-top: 60px !important; 
+    margin-left: 2rem !important;
+    margin-right: 2rem !important;
+  }
+  .p-login form { gap: 1rem !important; }
+  .p-login input { padding-top: 0.6rem !important; padding-bottom: 0.6rem !important; }
   
   .grid-cards {
     grid-template-columns: 1fr;
