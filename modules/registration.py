@@ -36,7 +36,7 @@ class LiveRegistration:
         self.min_face_area = min_face_area
 
         self.detector = FaceDetector(min_detection_confidence=0.7)
-        self.recognizer = FaceRecognizer(model="hog", num_jitters=100)
+        self.recognizer = FaceRecognizer(model="hog", num_jitters=1)
 
     def capture_faces(
         self,

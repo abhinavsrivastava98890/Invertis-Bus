@@ -148,6 +148,14 @@ const PushSubscription = mongoose.model('PushSubscription', PushSubscriptionSche
 
 const Attendance = mongoose.model('Attendance', new mongoose.Schema({}, { strict: false }), 'attendance');
 
+const EncodingSchema = new mongoose.Schema({
+  student_id: { type: String, required: true },
+  embedding: { type: String, required: true },
+  quality_score: { type: Number, default: 0.0 },
+  created_at: { type: Date, default: Date.now }
+}, { strict: true });
+const Encoding = mongoose.model('Encoding', EncodingSchema, 'encodings');
+
 const TelemetrySchema = new mongoose.Schema({
   route_id: { type: String, default: '4' },
   latitude: Number,
@@ -907,6 +915,33 @@ app.post('/api/internal/webhook', verifyWebhook, async (req, res) => {
     io.emit('global_attendance', normalizedData);
   }
   res.status(200).json({ status: "success", message: "Broadcasted via Express" });
+});
+
+app.post('/api/sync/encoding', verifyWebhook, async (req, res) => {
+  try {
+    const { student_id, embedding, quality_score } = req.body;
+    if (!student_id || !embedding) {
+      return res.status(400).json({ detail: "Missing student_id or embedding" });
+    }
+    
+    // Check if this exact embedding already exists for this student
+    const existing = await Encoding.findOne({ student_id, embedding });
+    if (existing) {
+      return res.status(200).json({ status: "success", message: "Encoding already exists" });
+    }
+    
+    const record = new Encoding({
+      student_id,
+      embedding,
+      quality_score: quality_score || 0.0
+    });
+    await record.save();
+    
+    res.status(201).json({ status: "success", message: "Encoding saved successfully" });
+  } catch (err) {
+    console.error("Error saving encoding in sync webhook:", err);
+    res.status(500).json({ detail: err.message });
+  }
 });
 
 server.listen(PORT, () => {

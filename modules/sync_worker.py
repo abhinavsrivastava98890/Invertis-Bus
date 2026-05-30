@@ -8,9 +8,18 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - SyncWorker - %(levelname)s - %(message)s')
 
 class SyncWorker(threading.Thread):
-    def __init__(self, db_path="data/attendance.db", backend_url="https://invertis-bus.onrender.com", interval=2.0):
+    def __init__(self, db_path="data/attendance.db", backend_url=None, interval=2.0):
         super().__init__()
         self.db_path = db_path
+        
+        if not backend_url:
+            import os
+            from dotenv import load_dotenv
+            env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend/.env")
+            if os.path.exists(env_path):
+                load_dotenv(env_path)
+            backend_url = os.getenv("BACKEND_URL") or "http://localhost:5000"
+            
         self.backend_url = backend_url.rstrip('/')
         self.interval = interval
         self.running = True
