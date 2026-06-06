@@ -292,12 +292,12 @@ def main():
                 # Also save to unified sync queue for cloud upload
                 try:
                     import json
-                    from datetime import datetime
+                    from datetime import datetime, timezone
                     import config
                     sync_conn = sqlite3.connect("data/attendance.db")
                     sync_cursor = sync_conn.cursor()
                     payload = {
-                        "timestamp": datetime.now().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                         "latitude": lat,
                         "longitude": lon,
                         "gps_speed_knots": gps_speed,

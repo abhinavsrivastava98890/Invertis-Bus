@@ -267,14 +267,14 @@ const Community = () => {
 
             {/* Media Attachment */}
             {comp.type === 'photo' && comp.media_url && (
-              <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
-                <img src={comp.media_url} alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'cover' }} />
+              <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: '#f8f9fa', display: 'flex', justifyContent: 'center' }}>
+                <img src={comp.media_url} alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '400px', objectFit: 'contain' }} />
               </div>
             )}
 
             {comp.type === 'video' && comp.media_url && (
               <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <video src={comp.media_url} controls style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'cover' }} />
+                <video src={comp.media_url} controls style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'contain' }} />
               </div>
             )}
 

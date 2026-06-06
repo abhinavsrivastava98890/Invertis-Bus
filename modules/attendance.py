@@ -301,7 +301,7 @@ class RealtimeAttendance:
                                         )
                                         
                                         # Queue attendance for sync
-                                        from datetime import datetime
+                                        from datetime import datetime, timezone
                                         import config
                                         database.add_to_sync_queue(
                                             data_type='attendance',
@@ -310,7 +310,7 @@ class RealtimeAttendance:
                                                 'name': name,
                                                 'fee_status': fee_status,
                                                 'confidence': float(confidence),
-                                                'check_in_time': datetime.now().isoformat(),
+                                                'check_in_time': datetime.now(timezone.utc).isoformat(),
                                                 'device_id': "webcam",
                                                 'route_id': getattr(config, 'ROUTE_ID', '4')
                                             }
@@ -328,7 +328,7 @@ class RealtimeAttendance:
                                                     'student_id': student_id,
                                                     'name': name,
                                                     'location': "Bus Camera",
-                                                    'check_in_time': datetime.now().isoformat(),
+                                                    'check_in_time': datetime.now(timezone.utc).isoformat(),
                                                     'route_id': getattr(config, 'ROUTE_ID', '4')
                                                 }
                                             )
@@ -351,14 +351,14 @@ class RealtimeAttendance:
                             # Queue unknown incident
                             current_time = time.time()
                             if current_time - getattr(self, 'last_unknown_capture', 0) > 15:
-                                from datetime import datetime
+                                from datetime import datetime, timezone
                                 import config
                                 database.add_to_sync_queue(
                                     data_type='attendance',
                                     payload={
                                         'person_type': 'Unknown',
                                         'location': "Bus Camera",
-                                        'check_in_time': datetime.now().isoformat(),
+                                        'check_in_time': datetime.now(timezone.utc).isoformat(),
                                         'route_id': getattr(config, 'ROUTE_ID', '4')
                                     }
                                 )
