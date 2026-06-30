@@ -420,6 +420,24 @@ const TransportInchargeDashboard = () => {
                     <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '8px', backgroundColor: comp.status === 'resolved' ? '#e6fae6' : '#fff1f0', color: comp.status === 'resolved' ? '#28a745' : '#cf1322' }}>{comp.status.toUpperCase()}</span>
                   </div>
                   <p style={{ margin: '1rem 0 0 0', fontSize: '1rem' }}>{comp.text}</p>
+
+                  {/* Media Attachment */}
+                  {comp.type === 'photo' && comp.media_url && (
+                    <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: '#f8f9fa', display: 'flex', justifyContent: 'center' }}>
+                      <img src={comp.media_url} alt="Complaint Attachment" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '400px', objectFit: 'contain' }} />
+                    </div>
+                  )}
+                  {comp.type === 'video' && comp.media_url && (
+                    <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginTop: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <video src={comp.media_url} controls style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'contain' }} />
+                    </div>
+                  )}
+                  {comp.type === 'audio' && comp.media_url && (
+                    <div style={{ marginTop: '0.5rem', padding: '1rem', backgroundColor: 'var(--bg-color)', borderRadius: '30px', border: '1px solid var(--border-color)' }}>
+                      <audio src={comp.media_url} controls style={{ width: '100%' }} />
+                    </div>
+                  )}
+
                   {comp.status === 'pending' && (
                     <button onClick={() => handleResolveGrievance(comp._id)} style={{ marginTop: '1rem', backgroundColor: '#28a745', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}>Mark Resolved</button>
                   )}
