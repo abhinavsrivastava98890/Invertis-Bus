@@ -17,7 +17,7 @@ if (localStorage.getItem('pref_dark') === 'true') {
 // Lazy loading pages for better performance
 const Home = lazy(() => import('./pages/Home'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const DriverDashboard = lazy(() => import('./pages/DriverDashboard'));
+const TransportInchargeDashboard = lazy(() => import('./pages/TransportInchargeDashboard'));
 const Community = lazy(() => import('./pages/Community'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -42,7 +42,7 @@ const PublicRoute = ({ children }) => {
   const { user } = useAuth();
   if (user) {
     if (user.role === 'admin') return <Navigate to="/admin-dashboard" replace />;
-    if (user.role === 'driver') return <Navigate to="/driver-dashboard" replace />;
+    if (user.role === 'transport_incharge') return <Navigate to="/transport-incharge-dashboard" replace />;
     return <Navigate to="/home" replace />;
   }
   return children;
@@ -101,10 +101,10 @@ function App() {
                 } 
               />
               <Route 
-                path="/driver-dashboard" 
+                path="/transport-incharge-dashboard" 
                 element={
-                  <ProtectedRoute allowedRoles={['driver']}>
-                    <DriverDashboard />
+                  <ProtectedRoute allowedRoles={['transport_incharge']}>
+                    <TransportInchargeDashboard />
                   </ProtectedRoute>
                 } 
               />

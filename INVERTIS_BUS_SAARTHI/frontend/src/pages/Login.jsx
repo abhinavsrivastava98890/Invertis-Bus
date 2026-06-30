@@ -12,7 +12,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { t, lang, setLanguage } = useLang();
-  const [loginType, setLoginType] = useState('student'); // 'student', 'admin', 'driver'
+  const [loginType, setLoginType] = useState('student'); // 'student', 'admin', 'transport_incharge'
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -65,8 +65,8 @@ const Login = () => {
 
           if (userData.role === 'admin') {
             navigate('/admin-dashboard', { replace: true });
-          } else if (userData.role === 'driver') {
-            navigate('/driver-dashboard', { replace: true });
+          } else if (userData.role === 'transport_incharge') {
+            navigate('/transport-incharge-dashboard', { replace: true });
           } else {
             navigate('/home', { replace: true });
           }
@@ -163,12 +163,12 @@ const Login = () => {
       }}>
         <div className="flex flex-col items-center" style={{ marginBottom: '1.25rem' }}>
           <div style={{
-            background: loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)',
+            background: loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'transport_incharge' ? '#28a745' : 'var(--primary-blue)',
             padding: '1rem',
             borderRadius: '16px', marginBottom: '1rem',
             transition: 'background-color 0.3s'
           }}>
-            {loginType === 'admin' ? <Shield size={32} color="white" /> : loginType === 'driver' ? <Car size={32} color="white" /> : <Bus size={32} color="white" />}
+            {loginType === 'admin' ? <Shield size={32} color="white" /> : loginType === 'transport_incharge' ? <Car size={32} color="white" /> : <Bus size={32} color="white" />}
           </div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', margin: 0, lineHeight: 1.2 }}>{t('loginTitle')}</h2>
           <p style={{ color: 'rgba(255,255,255,0.7)', margin: 0 }}>{t('loginSubtitle')}</p>
@@ -178,7 +178,7 @@ const Login = () => {
         <div style={{
           display: 'flex', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '4px', marginBottom: '2rem'
         }}>
-          {['student', 'driver', 'admin'].map((type) => (
+          {['student', 'transport_incharge', 'admin'].map((type) => (
             <button
               key={type}
               type="button"
@@ -192,7 +192,7 @@ const Login = () => {
                 cursor: 'pointer', transition: 'all 0.3s'
               }}
             >
-              {t(type + 'Login')}
+              {t(type === 'transport_incharge' ? 'transportInchargeLogin' : type + 'Login')}
             </button>
           ))}
         </div>
@@ -200,7 +200,7 @@ const Login = () => {
         <form onSubmit={handleLogin} className="flex flex-col" style={{ gap: '1.5rem' }}>
           <div className="animate-fade-in" key={loginType + 'id'}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '500', color: 'white' }}>
-              {loginType === 'student' ? t('studentId') : loginType === 'driver' ? t('driverId') : t('adminId')}
+              {loginType === 'student' ? t('studentId') : loginType === 'transport_incharge' ? t('transportInchargeId') : t('adminId')}
             </label>
             <div className="relative">
               <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }}>
@@ -208,7 +208,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
-                placeholder={loginType === 'student' ? t('enterStudentId') : loginType === 'driver' ? t('enterDriverId') : t('enterAdminId')}
+                placeholder={loginType === 'student' ? t('enterStudentId') : loginType === 'transport_incharge' ? t('enterTransportInchargeId') : t('enterAdminId')}
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 required
@@ -266,7 +266,7 @@ const Login = () => {
 
           <button type="submit" disabled={isLocked || isLoading} className={`btn hover-scale`} style={{
             marginTop: '1rem', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '1.1rem',
-            backgroundColor: (isLocked || isLoading) ? 'rgba(255,255,255,0.2)' : (loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'driver' ? '#28a745' : 'var(--primary-blue)'),
+            backgroundColor: (isLocked || isLoading) ? 'rgba(255,255,255,0.2)' : (loginType === 'admin' ? 'var(--secondary-orange)' : loginType === 'transport_incharge' ? '#28a745' : 'var(--primary-blue)'),
             color: 'white', border: 'none', cursor: (isLocked || isLoading) ? 'not-allowed' : 'pointer'
           }}>
             {isLocked ? t('locked') : (isLoading ? t('signingIn') : t('signIn'))}
