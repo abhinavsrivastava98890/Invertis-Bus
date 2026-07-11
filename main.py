@@ -77,7 +77,7 @@ def main_recognition():
         from modules.database import AttendanceDatabase
 
         db = AttendanceDatabase(db_path="data/attendance.db")
-        attendance = RealtimeAttendance(confidence_threshold=0.45)
+        attendance = RealtimeAttendance(confidence_threshold=0.35)
 
         print("\n" + "="*50)
         print("REAL-TIME FACE RECOGNITION (CLI MODE)")
@@ -127,11 +127,11 @@ def main_cli():
 
         elif choice == '2':
             from modules.attendance import RealtimeAttendance
-            threshold = input("Enter confidence threshold (default 0.45): ").strip()
+            threshold = input("Enter confidence threshold (default 0.35): ").strip()
             try:
-                threshold = float(threshold) if threshold else 0.45
+                threshold = float(threshold) if threshold else 0.35
             except ValueError:
-                threshold = 0.45
+                threshold = 0.35
             attendance = RealtimeAttendance(confidence_threshold=threshold)
             attendance.start_recognition(db, camera_id=0, timeout_seconds=600)
             attendance.release()

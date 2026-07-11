@@ -321,7 +321,7 @@ class AttendanceSystemGUI:
             orient=tk.HORIZONTAL,
             length=200
         )
-        self.rec_threshold.set(0.45)
+        self.rec_threshold.set(0.35)
         self.rec_threshold.pack(side=tk.LEFT, padx=5)
 
         # Start button
@@ -706,7 +706,7 @@ FACE RECOGNITION ATTENDANCE SYSTEM - QUICK START
 
 2. RECOGNITION
    - Go to 'Recognition' tab
-   - Set confidence threshold (0.45 recommended)
+   - Set confidence threshold (0.35 recommended)
    - Click 'Start Recognition'
    - Webcam will show live recognition
    - Green box: Paid fee (Access Granted)

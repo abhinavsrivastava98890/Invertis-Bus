@@ -33,7 +33,7 @@ class RealtimeAttendance:
         self.duplicate_window_minutes = duplicate_window_minutes
 
         self.detector = FaceDetector(min_detection_confidence=0.7)
-        self.recognizer = FaceRecognizer(model="hog", num_jitters=2)
+        self.recognizer = FaceRecognizer(model="hog", num_jitters=6)
 
         # Cache for face encodings (to avoid repeated queries)
         self.cached_embeddings = {}

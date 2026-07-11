@@ -21,13 +21,13 @@ FRAME_MAX_WIDTH = 640
 # 0.3-0.4: Very strict (few false positives)
 # 0.6: Default (balanced)
 # 0.8-1.0: Lenient (more false positives)
-FACE_DISTANCE_THRESHOLD = 0.6
+FACE_DISTANCE_THRESHOLD = 0.35
 
 # Recognition model: 'hog' (fast/CPU) or 'cnn' (slow/GPU)
 RECOGNITION_MODEL = "hog"
 
 # Number of times to re-sample face (higher = more accurate but slower)
-RECOGNITION_NUM_JITTERS = 1
+RECOGNITION_NUM_JITTERS = 6
 
 # ==================== REGISTRATION SETTINGS ====================
 

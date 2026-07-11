@@ -785,6 +785,22 @@ app.get('/api/route_status/:route_id', async (req, res) => {
   }
 });
 
+// --- Face Encoding Sync (from Raspberry Pi hardware) ---
+const Encoding = mongoose.models.Encoding || mongoose.model('Encoding', new mongoose.Schema({}, { strict: false }), 'encodings');
+
+app.post('/api/sync/encoding', verifyWebhook, async (req, res) => {
+  try {
+    const payload = req.body;
+    payload.synced_at = new Date().toISOString();
+    const encodingDoc = new Encoding(payload);
+    const saved = await encodingDoc.save();
+    res.status(200).json({ status: 'success', id: saved._id.toString() });
+  } catch (err) {
+    console.error('Failed to save encoding:', err);
+    res.status(500).json({ detail: err.message });
+  }
+});
+
 app.post('/api/internal/telemetry', verifyWebhook, async (req, res) => {
   const data = req.body;
   const route_id = data.route_id || '4'; 

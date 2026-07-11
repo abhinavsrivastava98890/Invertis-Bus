@@ -57,7 +57,7 @@ class FaceRecognizer:
     def __init__(
         self,
         model: str = "hog",
-        num_jitters: int = 1
+        num_jitters: int = 6
     ):
         """
         Initialize face recognizer.
